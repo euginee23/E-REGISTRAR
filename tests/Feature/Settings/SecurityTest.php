@@ -4,9 +4,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 
-beforeEach(function () {
-});
-
 test('security settings page can be rendered', function () {
     $user = User::factory()->create();
 
@@ -39,9 +36,6 @@ test('security settings page renders without two factor when feature is disabled
         ->assertDontSee('Manage your passkeys for passwordless sign-in')
         ->assertDontSee('Add a passkey to sign in without a password')
         ->assertDontSee('Two-factor authentication');
-});
-
-test('two factor authentication disabled when confirmation abandoned between requests', function () {
 });
 
 test('password can be updated', function () {
