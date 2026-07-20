@@ -7,11 +7,14 @@
         <flux:header container sticky class="bg-white/90 backdrop-blur border-b border-zinc-200 dark:bg-neutral-950/90 dark:border-neutral-800">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
-            <flux:brand href="{{ route('home') }}" name="e-Registrar" wire:navigate>
-                <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-                    <x-app-logo-icon class="size-5 fill-current text-white dark:text-neutral-900" />
-                </x-slot>
-            </flux:brand>
+            <a href="{{ route('home') }}" wire:navigate class="me-4 flex h-10 items-center">
+                <img
+                    src="{{ asset('logos/e-registrar-logo.png') }}"
+                    alt="{{ __('e-Registrar') }}"
+                    class="h-8 w-auto"
+                    onerror="this.onerror=null; this.src='{{ asset('logos/e-registrar-logo.svg') }}';"
+                >
+            </a>
 
             <flux:navbar class="-mb-px max-lg:hidden">
                 <flux:navbar.item href="{{ route('home') }}" wire:navigate :current="false" data-nav-link="home">{{ __('Home') }}</flux:navbar.item>
@@ -30,11 +33,14 @@
 
         <flux:sidebar collapsible="mobile" class="lg:hidden bg-white dark:bg-neutral-950 border-r border-zinc-200 dark:border-neutral-800">
             <flux:sidebar.header>
-                <flux:sidebar.brand href="{{ route('home') }}" name="e-Registrar" wire:navigate>
-                    <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-                        <x-app-logo-icon class="size-5 fill-current text-white dark:text-neutral-900" />
-                    </x-slot>
-                </flux:sidebar.brand>
+                <a href="{{ route('home') }}" wire:navigate class="flex h-10 items-center px-2">
+                    <img
+                        src="{{ asset('logos/e-registrar-logo.png') }}"
+                        alt="{{ __('e-Registrar') }}"
+                        class="h-8 w-auto"
+                        onerror="this.onerror=null; this.src='{{ asset('logos/e-registrar-logo.svg') }}';"
+                    >
+                </a>
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
@@ -60,12 +66,12 @@
             <div class="mx-auto max-w-7xl px-6 py-12 lg:px-8">
                 <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                        <div class="flex items-center gap-2">
-                            <span class="flex size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-                                <x-app-logo-icon class="size-5 fill-current text-white dark:text-neutral-900" />
-                            </span>
-                            <span class="text-base font-semibold text-zinc-900 dark:text-white">e-Registrar</span>
-                        </div>
+                        <img
+                            src="{{ asset('logos/e-registrar-logo.png') }}"
+                            alt="{{ __('e-Registrar') }}"
+                            class="h-8 w-auto"
+                            onerror="this.onerror=null; this.src='{{ asset('logos/e-registrar-logo.svg') }}';"
+                        >
                         <flux:text class="mt-3 max-w-xs">
                             {{ __('A simpler way for students and alumni to request academic documents and schedule pickup appointments online.') }}
                         </flux:text>

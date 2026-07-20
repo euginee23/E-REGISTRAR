@@ -41,26 +41,22 @@
             </div>
 
             <div class="mt-16 lg:mt-0 lg:flex-1">
-                <flux:card class="mx-auto max-w-md border-brand-100 shadow-xl dark:border-neutral-800">
-                    <flux:heading size="lg">{{ __('Transcript of Records') }}</flux:heading>
-                    <flux:badge color="lime" class="mt-2">{{ __('Ready for pickup') }}</flux:badge>
+                <flux:card class="mx-auto max-w-md border-brand-100 text-center shadow-xl dark:border-neutral-800">
+                    <img
+                        src="{{ asset('logos/west-prime-logo.png') }}"
+                        alt="{{ __('West Prime Horizon Institute, Inc. seal') }}"
+                        class="mx-auto size-28 object-contain"
+                        onerror="this.onerror=null; this.src='{{ asset('logos/west-prime-logo.svg') }}';"
+                    >
+
+                    <flux:heading size="lg" class="mt-4">{{ __('West Prime Horizon Institute, Inc.') }}</flux:heading>
+                    <flux:text class="mt-1">{{ __('V. Sagun St., Pagadian City, Philippines, 7016') }}</flux:text>
 
                     <flux:separator class="my-4" variant="subtle" />
 
-                    <div class="space-y-3 text-sm">
-                        <div class="flex items-center justify-between">
-                            <flux:text>{{ __('Requested') }}</flux:text>
-                            <flux:text class="font-medium text-zinc-900 dark:text-white">{{ __('Jul 14, 2026') }}</flux:text>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <flux:text>{{ __('Appointment') }}</flux:text>
-                            <flux:text class="font-medium text-zinc-900 dark:text-white">{{ __('Jul 22, 2026 · 10:00 AM') }}</flux:text>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <flux:text>{{ __('Reference No.') }}</flux:text>
-                            <flux:text class="font-medium text-zinc-900 dark:text-white">{{ __('REQ-2026-0143') }}</flux:text>
-                        </div>
-                    </div>
+                    <flux:text class="text-sm">
+                        {{ __('Online Document Request & Appointment Scheduling System') }}
+                    </flux:text>
                 </flux:card>
             </div>
         </div>
