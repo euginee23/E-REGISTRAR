@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +18,10 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+// Enum tests are pure logic but their labels resolve through the translator,
+// so they need a booted application - though not a database.
+pest()->extend(TestCase::class)->in('Unit/Enums');
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +49,34 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Create an administrator account.
+ */
+function administrator(): User
 {
-    // ..
+    return User::factory()->administrator()->create();
+}
+
+/**
+ * Create a registrar staff account.
+ */
+function registrarStaff(): User
+{
+    return User::factory()->registrarStaff()->create();
+}
+
+/**
+ * Create a student account with an attached student profile.
+ */
+function student(): User
+{
+    return User::factory()->student()->create();
+}
+
+/**
+ * Create an alumnus account with an attached student profile.
+ */
+function alumnus(): User
+{
+    return User::factory()->alumnus()->create();
 }

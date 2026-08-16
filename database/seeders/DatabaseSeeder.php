@@ -2,24 +2,29 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
+     *
+     * Model events are deliberately left enabled: document request reference
+     * numbers are assigned by an observer, so suppressing events would
+     * produce requests with no way to track them.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(DocumentTypeSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        if (app()->isProduction()) {
+            return;
+        }
+
+        $this->call([
+            DemoUserSeeder::class,
+            TimeSlotSeeder::class,
+            DemoDataSeeder::class,
         ]);
     }
 }
