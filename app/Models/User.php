@@ -141,6 +141,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Mark every unread notification for the user as read.
+     *
+     * @return int The number of notifications marked.
+     */
+    public function markAllNotificationsRead(): int
+    {
+        return $this->registrarNotifications()->unread()->update(['is_read' => true]);
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

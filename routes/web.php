@@ -10,7 +10,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('attachments/{attachment}', DownloadAttachmentController::class)
         ->name('attachments.download');
+
+    Route::livewire('notifications', 'pages::notifications')->name('notifications.index');
 });
 
 require __DIR__.'/settings.php';
 require __DIR__.'/student.php';
+require __DIR__.'/registrar.php';

@@ -16,6 +16,10 @@
 
             <flux:spacer />
 
+            <div class="hidden px-2 pb-2 lg:block">
+                <livewire:notification-bell />
+            </div>
+
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
@@ -24,6 +28,8 @@
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <flux:spacer />
+
+            <livewire:notification-bell />
 
             <flux:dropdown position="top" align="end">
                 <flux:profile

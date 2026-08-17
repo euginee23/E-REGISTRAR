@@ -11,7 +11,7 @@
         {{ __('Appointments') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="bell" href="#" :current="request()->routeIs('notifications.*')">
+    <flux:sidebar.item icon="bell" :href="route('notifications.index')" :current="request()->routeIs('notifications.*')" wire:navigate>
         {{ __('Notifications') }}
     </flux:sidebar.item>
 </flux:sidebar.group>

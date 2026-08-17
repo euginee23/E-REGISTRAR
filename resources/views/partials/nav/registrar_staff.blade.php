@@ -3,7 +3,7 @@
         {{ __('Dashboard') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="inbox-stack" href="#" :current="request()->routeIs('registrar.requests.*')">
+    <flux:sidebar.item icon="inbox-stack" :href="route('registrar.requests.index')" :current="request()->routeIs('registrar.requests.*')" wire:navigate>
         {{ __('Request queue') }}
     </flux:sidebar.item>
 
@@ -19,7 +19,7 @@
         {{ __('Reports') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="bell" href="#" :current="request()->routeIs('notifications.*')">
+    <flux:sidebar.item icon="bell" :href="route('notifications.index')" :current="request()->routeIs('notifications.*')" wire:navigate>
         {{ __('Notifications') }}
     </flux:sidebar.item>
 </flux:sidebar.group>
