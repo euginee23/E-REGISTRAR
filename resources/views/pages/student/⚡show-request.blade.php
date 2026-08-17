@@ -191,6 +191,17 @@ new class extends Component {
                     <flux:callout.text>
                         {{ __('Reserve a time slot so you can collect this document without queueing.') }}
                     </flux:callout.text>
+
+                    <x-slot name="actions">
+                        <flux:button
+                            :href="route('student.appointments.book', $documentRequest)"
+                            size="sm"
+                            wire:navigate
+                            data-test="book-appointment-link"
+                        >
+                            {{ __('Book appointment') }}
+                        </flux:button>
+                    </x-slot>
                 </flux:callout>
             @endif
         </div>

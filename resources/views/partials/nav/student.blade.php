@@ -7,7 +7,7 @@
         {{ __('My requests') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="calendar-days" href="#" :current="request()->routeIs('student.appointments.*')">
+    <flux:sidebar.item icon="calendar-days" :href="route('student.appointments.index')" :current="request()->routeIs('student.appointments.*')" wire:navigate>
         {{ __('Appointments') }}
     </flux:sidebar.item>
 

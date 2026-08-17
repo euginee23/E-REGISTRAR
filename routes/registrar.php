@@ -10,4 +10,10 @@ Route::middleware(['auth', 'verified', 'role:administrator,registrar_staff'])
 
         Route::livewire('requests/{documentRequest}', 'pages::registrar.show-request')
             ->name('registrar.requests.show');
+
+        Route::livewire('appointments', 'pages::registrar.appointments')
+            ->name('registrar.appointments.index');
+
+        Route::livewire('time-slots', 'pages::registrar.time-slots')
+            ->name('registrar.time-slots.index');
     });

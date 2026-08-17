@@ -13,4 +13,10 @@ Route::middleware(['auth', 'verified', 'role:student'])
 
         Route::livewire('requests/{documentRequest}', 'pages::student.show-request')
             ->name('student.requests.show');
+
+        Route::livewire('appointments', 'pages::student.appointments')
+            ->name('student.appointments.index');
+
+        Route::livewire('appointments/book/{documentRequest}', 'pages::student.book-appointment')
+            ->name('student.appointments.book');
     });
