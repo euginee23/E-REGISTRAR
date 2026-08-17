@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Observers\RequestAttachmentObserver;
 use Carbon\CarbonImmutable;
 use Database\Factories\RequestAttachmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,7 @@ use Illuminate\Support\Number;
  * @property-read DocumentRequest $documentRequest
  */
 #[Fillable(['document_request_id', 'disk', 'path', 'original_name', 'mime_type', 'size'])]
+#[ObservedBy(RequestAttachmentObserver::class)]
 class RequestAttachment extends Model
 {
     /** @use HasFactory<RequestAttachmentFactory> */

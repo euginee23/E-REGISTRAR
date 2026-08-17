@@ -3,7 +3,7 @@
         {{ __('Dashboard') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="document-text" href="#" :current="request()->routeIs('student.requests.*')">
+    <flux:sidebar.item icon="document-text" :href="route('student.requests.index')" :current="request()->routeIs('student.requests.*')" wire:navigate>
         {{ __('My requests') }}
     </flux:sidebar.item>
 

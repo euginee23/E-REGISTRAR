@@ -76,7 +76,13 @@ new class extends Component {
     <x-page-heading
         :heading="__('Welcome back, :name', ['name' => auth()->user()->name])"
         :subheading="__('Track your document requests and claiming appointments.')"
-    />
+    >
+        @if ($this->student !== null)
+            <flux:button :href="route('student.requests.create')" variant="primary" icon="plus" size="sm" wire:navigate>
+                {{ __('New request') }}
+            </flux:button>
+        @endif
+    </x-page-heading>
 
     @if ($this->student === null)
         <flux:callout variant="warning" icon="exclamation-triangle">
@@ -123,7 +129,15 @@ new class extends Component {
     </div>
 
     <flux:card class="flex flex-col gap-4">
-        <flux:heading size="sm">{{ __('Recent requests') }}</flux:heading>
+        <div class="flex items-center justify-between gap-4">
+            <flux:heading size="sm">{{ __('Recent requests') }}</flux:heading>
+
+            @if ($this->recentRequests->isNotEmpty())
+                <flux:button :href="route('student.requests.index')" size="xs" variant="ghost" wire:navigate>
+                    {{ __('View all') }}
+                </flux:button>
+            @endif
+        </div>
 
         @if ($this->recentRequests->isEmpty())
             <x-empty-state
