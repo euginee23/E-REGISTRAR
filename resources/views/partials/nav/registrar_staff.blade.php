@@ -15,7 +15,7 @@
         {{ __('Time slots') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="chart-bar" href="#" :current="request()->routeIs('registrar.reports.*')">
+    <flux:sidebar.item icon="chart-bar" :href="route('registrar.reports.index')" :current="request()->routeIs('registrar.reports.*')" wire:navigate>
         {{ __('Reports') }}
     </flux:sidebar.item>
 

@@ -18,6 +18,19 @@ trait PasswordValidationRules
     }
 
     /**
+     * Get the validation rules used to validate an optional password change.
+     *
+     * Used where leaving the field blank means "keep the current password",
+     * such as an administrator editing someone else's account.
+     *
+     * @return array<int, Password|ValidationRule|array<mixed>|string>
+     */
+    protected function optionalPasswordRules(): array
+    {
+        return ['nullable', 'string', Password::default(), 'confirmed'];
+    }
+
+    /**
      * Get the validation rules used to validate the current password.
      *
      * @return array<int, Password|ValidationRule|array<mixed>|string>

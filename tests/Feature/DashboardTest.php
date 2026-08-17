@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Appointment;
+use App\Models\DocumentRequest;
 use App\Models\User;
 
 test('guests are redirected to the login page', function () {
@@ -33,6 +35,22 @@ test('a role never sees another role\'s dashboard', function () {
         ->assertDontSee('data-test="admin-dashboard"', escape: false)
         ->assertDontSee('data-test="registrar-dashboard"', escape: false);
 });
+
+test('every dashboard renders once there is real data behind it', function (string $helper, string $marker) {
+    DocumentRequest::factory()->count(2)->pending()->create();
+    DocumentRequest::factory()->released()->create();
+    Appointment::factory()->create();
+
+    $this->actingAs($helper());
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee($marker, escape: false);
+})->with([
+    ['student', 'data-test="student-dashboard"'],
+    ['registrarStaff', 'data-test="registrar-dashboard"'],
+    ['administrator', 'data-test="admin-dashboard"'],
+]);
 
 test('a student without a profile is prompted to complete it instead of erroring', function () {
     // Registration always creates a profile, but an administrator can create

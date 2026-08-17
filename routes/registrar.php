@@ -16,4 +16,15 @@ Route::middleware(['auth', 'verified', 'role:administrator,registrar_staff'])
 
         Route::livewire('time-slots', 'pages::registrar.time-slots')
             ->name('registrar.time-slots.index');
+
+        Route::livewire('reports', 'pages::registrar.reports')
+            ->name('registrar.reports.index');
+
+        Route::middleware(['role:administrator'])->prefix('admin')->group(function () {
+            Route::livewire('users', 'pages::admin.users')
+                ->name('admin.users.index');
+
+            Route::livewire('document-types', 'pages::admin.document-types')
+                ->name('admin.document-types.index');
+        });
     });

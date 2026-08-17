@@ -15,17 +15,17 @@
         {{ __('Time slots') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="chart-bar" href="#" :current="request()->routeIs('registrar.reports.*')">
+    <flux:sidebar.item icon="chart-bar" :href="route('registrar.reports.index')" :current="request()->routeIs('registrar.reports.*')" wire:navigate>
         {{ __('Reports') }}
     </flux:sidebar.item>
 </flux:sidebar.group>
 
 <flux:sidebar.group :heading="__('Administration')" class="grid">
-    <flux:sidebar.item icon="users" href="#" :current="request()->routeIs('admin.users.*')">
+    <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
         {{ __('User accounts') }}
     </flux:sidebar.item>
 
-    <flux:sidebar.item icon="document-duplicate" href="#" :current="request()->routeIs('admin.document-types.*')">
+    <flux:sidebar.item icon="document-duplicate" :href="route('admin.document-types.index')" :current="request()->routeIs('admin.document-types.*')" wire:navigate>
         {{ __('Document types') }}
     </flux:sidebar.item>
 
