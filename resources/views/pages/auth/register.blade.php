@@ -30,6 +30,62 @@
                 placeholder="email@example.com"
             />
 
+            <!-- Enrollment status -->
+            <div x-data="{ status: '{{ old('enrollment_status', 'enrolled') }}' }" class="flex flex-col gap-6">
+                <flux:select
+                    name="enrollment_status"
+                    :label="__('I am a')"
+                    x-model="status"
+                    required
+                >
+                    <flux:select.option value="enrolled">{{ __('Currently enrolled student') }}</flux:select.option>
+                    <flux:select.option value="alumnus">{{ __('Alumnus') }}</flux:select.option>
+                </flux:select>
+
+                <!-- Course -->
+                <flux:input
+                    name="course"
+                    :label="__('Course')"
+                    :value="old('course')"
+                    type="text"
+                    required
+                    :placeholder="__('BS Information Technology')"
+                />
+
+                <!-- Year graduated (alumni only) -->
+                <div x-show="status === 'alumnus'" x-cloak>
+                    <flux:input
+                        name="year_graduated"
+                        :label="__('Year graduated')"
+                        :value="old('year_graduated')"
+                        type="number"
+                        min="1950"
+                        max="{{ date('Y') }}"
+                        :placeholder="date('Y') - 1"
+                    />
+                </div>
+            </div>
+
+            <!-- Student number -->
+            <flux:input
+                name="student_number"
+                :label="__('Student number')"
+                :value="old('student_number')"
+                type="text"
+                :description="__('Optional. Helps the registrar locate your records faster.')"
+                :placeholder="__('2022-10231')"
+            />
+
+            <!-- Contact number -->
+            <flux:input
+                name="contact_number"
+                :label="__('Contact number')"
+                :value="old('contact_number')"
+                type="tel"
+                required
+                placeholder="09171234567"
+            />
+
             <!-- Password -->
             <flux:input
                 name="password"

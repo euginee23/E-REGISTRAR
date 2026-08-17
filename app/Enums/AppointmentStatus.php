@@ -54,6 +54,20 @@ enum AppointmentStatus: string
     }
 
     /**
+     * Determine whether the appointment has run its course.
+     *
+     * A finished appointment can no longer be rescheduled, cancelled, or
+     * confirmed; only a fresh booking can follow it.
+     */
+    public function isFinished(): bool
+    {
+        return match ($this) {
+            self::Scheduled, self::Confirmed => false,
+            self::Completed, self::Cancelled, self::NoShow => true,
+        };
+    }
+
+    /**
      * Get the statuses that still consume a seat in a time slot.
      *
      * @return array<int, self>
