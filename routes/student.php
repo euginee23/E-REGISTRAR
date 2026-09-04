@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'role:student'])
+Route::middleware(['auth', 'verified', 'role:student', 'student.profile'])
     ->prefix('student')
     ->group(function () {
         Route::livewire('requests', 'pages::student.requests')

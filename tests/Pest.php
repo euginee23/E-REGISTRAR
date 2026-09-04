@@ -74,6 +74,15 @@ function student(): User
 }
 
 /**
+ * Create a student account that has no student profile yet, as happens when
+ * an administrator creates the account instead of the student registering.
+ */
+function studentWithoutProfile(): User
+{
+    return User::factory()->create();
+}
+
+/**
  * Create an alumnus account with an attached student profile.
  */
 function alumnus(): User

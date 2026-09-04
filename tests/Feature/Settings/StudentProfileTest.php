@@ -36,6 +36,47 @@ test('a student can update their profile', function () {
         ->and($student->student_number)->toBe('2023-00042');
 });
 
+test('the screen renders for a student who has no profile yet', function () {
+    $this->actingAs(studentWithoutProfile());
+
+    Livewire::test('pages::settings.student-profile')
+        ->assertOk()
+        ->assertSet('course', '')
+        ->assertSet('contact_number', '')
+        ->assertSet('enrollment_status', EnrollmentStatus::Enrolled->value);
+});
+
+test('saving creates the profile when the student has none', function () {
+    $user = studentWithoutProfile();
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.student-profile')
+        ->set('course', 'BS Nursing')
+        ->set('contact_number', '09171112222')
+        ->call('updateStudentProfile')
+        ->assertHasNoErrors();
+
+    $student = $user->refresh()->student;
+
+    expect($student)->not->toBeNull()
+        ->and($student->course)->toBe('BS Nursing')
+        ->and($student->contact_number)->toBe('09171112222')
+        ->and($student->enrollment_status)->toBe(EnrollmentStatus::Enrolled);
+});
+
+test('a newly created profile unblocks the student area', function () {
+    $user = studentWithoutProfile();
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.student-profile')
+        ->set('course', 'BS Nursing')
+        ->set('contact_number', '09171112222')
+        ->call('updateStudentProfile')
+        ->assertHasNoErrors();
+
+    $this->get(route('student.requests.index'))->assertOk();
+});
+
 test('switching to alumnus requires a graduation year', function () {
     $this->actingAs(student());
 

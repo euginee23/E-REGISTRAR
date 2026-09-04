@@ -24,25 +24,30 @@ new #[Title('Student profile')] class extends Component {
     {
         $student = $this->student();
 
-        $this->student_number = $student->student_number ?? '';
-        $this->course = $student->course;
-        $this->enrollment_status = $student->enrollment_status->value;
-        $this->year_graduated = $student->year_graduated;
-        $this->contact_number = $student->contact_number;
+        $this->student_number = $student?->student_number ?? '';
+        $this->course = $student?->course ?? '';
+        $this->enrollment_status = ($student?->enrollment_status ?? EnrollmentStatus::Enrolled)->value;
+        $this->year_graduated = $student?->year_graduated;
+        $this->contact_number = $student?->contact_number ?? '';
     }
 
     /**
-     * Update the student profile for the currently authenticated user.
+     * Save the student profile for the currently authenticated user.
+     *
+     * The profile is created when it is missing, which happens when an
+     * administrator sets up the account rather than the student registering.
      */
     public function updateStudentProfile(): void
     {
         $student = $this->student();
 
-        $validated = $this->validate($this->studentProfileRules($student->id));
+        $validated = $this->validate($this->studentProfileRules($student?->id));
 
         $enrollmentStatus = EnrollmentStatus::from($validated['enrollment_status']);
 
-        $student->update([
+        $user = Auth::user();
+
+        $user->student()->updateOrCreate([], [
             'student_number' => $validated['student_number'] ?: null,
             'course' => $validated['course'],
             'enrollment_status' => $enrollmentStatus,
@@ -52,13 +57,15 @@ new #[Title('Student profile')] class extends Component {
             'contact_number' => $validated['contact_number'],
         ]);
 
+        $user->unsetRelation('student');
+
         Flux::toast(variant: 'success', text: __('Student profile updated.'));
     }
 
     /**
-     * Get the signed-in user's student profile.
+     * Get the signed-in user's student profile, if they have one.
      */
-    private function student(): Student
+    private function student(): ?Student
     {
         return Auth::user()->student;
     }
@@ -70,6 +77,15 @@ new #[Title('Student profile')] class extends Component {
     <flux:heading class="sr-only">{{ __('Student profile settings') }}</flux:heading>
 
     <x-pages::settings.layout :heading="__('Student profile')" :subheading="__('Details the registrar uses to locate your academic records')">
+        @if (session('status') === 'student-profile-required')
+            <flux:callout variant="warning" icon="exclamation-triangle" class="mt-6" data-test="profile-required-callout">
+                <flux:callout.heading>{{ __('Complete your student profile') }}</flux:callout.heading>
+                <flux:callout.text>
+                    {{ __('The registrar needs your course and contact details before you can request documents.') }}
+                </flux:callout.text>
+            </flux:callout>
+        @endif
+
         <form wire:submit="updateStudentProfile" class="my-6 w-full space-y-6">
             <flux:input
                 wire:model="student_number"
