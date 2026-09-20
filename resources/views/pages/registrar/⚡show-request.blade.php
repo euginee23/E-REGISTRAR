@@ -53,6 +53,7 @@ new class extends Component {
             'attachments',
             'statusHistories.changedBy',
             'appointment.timeSlot',
+            'recordedBy',
         ]);
     }
 }; ?>
@@ -65,6 +66,22 @@ new class extends Component {
         <flux:button :href="route('registrar.requests.index')" variant="ghost" size="sm" wire:navigate>
             {{ __('Back to queue') }}
         </flux:button>
+
+        <flux:button
+            :href="route('requests.slip', $documentRequest)"
+            variant="filled"
+            size="sm"
+            icon="printer"
+            target="_blank"
+            data-test="print-slip-link"
+        >
+            {{ __('Print transaction slip') }}
+        </flux:button>
+
+        <livewire:registrar.record-payment
+            :document-request="$documentRequest"
+            :wire:key="'record-payment-' . $documentRequest->id . '-' . $documentRequest->payment_status->value"
+        />
 
         <livewire:registrar.update-request-status
             :document-request="$documentRequest"
@@ -116,6 +133,63 @@ new class extends Component {
                     @endif
                 </dl>
             </flux:card>
+
+            @if ($documentRequest->payment_status !== App\Enums\PaymentStatus::NotRequired)
+                <flux:card class="flex flex-col gap-4" data-test="payment-card">
+                    <div class="flex items-center justify-between gap-4">
+                        <flux:heading size="sm">{{ __('Payment') }}</flux:heading>
+                        <x-status-badge :status="$documentRequest->payment_status" />
+                    </div>
+
+                    <flux:separator />
+
+                    @if ($documentRequest->awaitsPayment())
+                        <flux:callout variant="warning" icon="exclamation-triangle" data-test="payment-blocking-callout">
+                            <flux:callout.heading>{{ __('Payment must be recorded first') }}</flux:callout.heading>
+                            <flux:callout.text>
+                                {{ __('This request cannot move into processing until the :amount fee has been collected and recorded.', [
+                                    'amount' => '₱' . number_format((float) $documentRequest->fee_amount, 2),
+                                ]) }}
+                            </flux:callout.text>
+                        </flux:callout>
+                    @endif
+
+                    <dl class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <dt><flux:text size="sm" class="text-zinc-500">{{ __('Fee') }}</flux:text></dt>
+                            <dd><flux:text>₱{{ number_format((float) $documentRequest->fee_amount, 2) }}</flux:text></dd>
+                        </div>
+
+                        @if ($documentRequest->amount_paid !== null)
+                            <div>
+                                <dt><flux:text size="sm" class="text-zinc-500">{{ __('Amount paid') }}</flux:text></dt>
+                                <dd><flux:text>₱{{ number_format((float) $documentRequest->amount_paid, 2) }}</flux:text></dd>
+                            </div>
+                        @endif
+
+                        @if ($documentRequest->or_number !== null)
+                            <div>
+                                <dt><flux:text size="sm" class="text-zinc-500">{{ __('Official receipt') }}</flux:text></dt>
+                                <dd><flux:text class="font-mono text-xs">{{ $documentRequest->or_number }}</flux:text></dd>
+                            </div>
+                        @endif
+
+                        @if ($documentRequest->paid_at !== null)
+                            <div>
+                                <dt><flux:text size="sm" class="text-zinc-500">{{ __('Recorded') }}</flux:text></dt>
+                                <dd>
+                                    <flux:text>
+                                        {{ $documentRequest->paid_at->format('F j, Y \a\t g:i A') }}
+                                        @if ($documentRequest->recordedBy !== null)
+                                            {{ __('by :name', ['name' => $documentRequest->recordedBy->name]) }}
+                                        @endif
+                                    </flux:text>
+                                </dd>
+                            </div>
+                        @endif
+                    </dl>
+                </flux:card>
+            @endif
 
             <flux:card class="flex flex-col gap-4">
                 <flux:heading size="sm">{{ __('Supporting requirements') }}</flux:heading>

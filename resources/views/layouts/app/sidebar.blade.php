@@ -11,7 +11,7 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                @include('partials.nav.' . auth()->user()->role->value)
+                <livewire:sidebar-nav />
             </flux:sidebar.nav>
 
             <flux:spacer />

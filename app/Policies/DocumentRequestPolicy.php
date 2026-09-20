@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\User;
@@ -61,7 +62,28 @@ class DocumentRequestPolicy
             return $this->cancel($user, $documentRequest);
         }
 
+        // A chargeable document is not started until the money is in. Only
+        // the move into processing is blocked: rejecting or cancelling an
+        // unpaid request must stay possible, or it could never be closed.
+        if ($to === RequestStatus::Processing && $documentRequest->awaitsPayment()) {
+            return false;
+        }
+
         return $user->isStaff();
+    }
+
+    /**
+     * Determine whether the user may record a payment against the request.
+     *
+     * This answers who may touch the money and whether there is any money to
+     * touch - a free document has none. Whether the fee has already been
+     * collected is left to RecordPayment, so a second attempt is met with an
+     * explanation rather than a bare refusal.
+     */
+    public function recordPayment(User $user, DocumentRequest $documentRequest): bool
+    {
+        return $user->isStaff()
+            && $documentRequest->payment_status !== PaymentStatus::NotRequired;
     }
 
     /**

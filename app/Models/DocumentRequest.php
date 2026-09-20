@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
 use App\Observers\DocumentRequestObserver;
 use Carbon\CarbonImmutable;
@@ -27,6 +28,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $purpose
  * @property int $copies
  * @property RequestStatus $status
+ * @property PaymentStatus $payment_status
+ * @property string $fee_amount
+ * @property string|null $amount_paid
+ * @property string|null $or_number
+ * @property CarbonImmutable|null $paid_at
+ * @property int|null $recorded_by_user_id
  * @property string|null $remarks
  * @property int|null $processed_by_user_id
  * @property CarbonImmutable|null $ready_at
@@ -37,6 +44,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read Student $student
  * @property-read DocumentType $documentType
  * @property-read User|null $processedBy
+ * @property-read User|null $recordedBy
  * @property-read Appointment|null $appointment
  * @property-read Collection<int, RequestAttachment> $attachments
  * @property-read Collection<int, RequestStatusHistory> $statusHistories
@@ -49,6 +57,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'purpose',
     'copies',
     'status',
+    'payment_status',
+    'fee_amount',
+    'amount_paid',
+    'or_number',
+    'paid_at',
+    'recorded_by_user_id',
     'remarks',
     'processed_by_user_id',
     'ready_at',
@@ -68,6 +82,8 @@ class DocumentRequest extends Model
     protected $attributes = [
         'copies' => 1,
         'status' => RequestStatus::Pending->value,
+        'payment_status' => PaymentStatus::NotRequired->value,
+        'fee_amount' => 0,
     ];
 
     /**
@@ -80,6 +96,10 @@ class DocumentRequest extends Model
         return [
             'copies' => 'integer',
             'status' => RequestStatus::class,
+            'payment_status' => PaymentStatus::class,
+            'fee_amount' => 'decimal:2',
+            'amount_paid' => 'decimal:2',
+            'paid_at' => 'immutable_datetime',
             'ready_at' => 'immutable_datetime',
             'released_at' => 'immutable_datetime',
         ];
@@ -113,6 +133,32 @@ class DocumentRequest extends Model
     public function processedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'processed_by_user_id');
+    }
+
+    /**
+     * Get the staff member who recorded the payment.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function recordedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by_user_id');
+    }
+
+    /**
+     * Determine whether a payment is still owed on this request.
+     */
+    public function awaitsPayment(): bool
+    {
+        return $this->payment_status->isOutstanding();
+    }
+
+    /**
+     * Determine whether the money side of the request is settled.
+     */
+    public function isPaymentSettled(): bool
+    {
+        return $this->payment_status->isSettled();
     }
 
     /**
@@ -202,6 +248,17 @@ class DocumentRequest extends Model
     protected function open(Builder $query): void
     {
         $query->whereIn('status', RequestStatus::open());
+    }
+
+    /**
+     * Scope the query to requests whose fee has not been collected.
+     *
+     * @param  Builder<DocumentRequest>  $query
+     */
+    #[Scope]
+    protected function awaitingPayment(Builder $query): void
+    {
+        $query->where('payment_status', PaymentStatus::Unpaid);
     }
 
     /**

@@ -51,30 +51,18 @@ new #[Title('Book an appointment')] class extends Component {
     #[Computed]
     public function maxDate(): string
     {
-        return CarbonImmutable::today()
-            ->addDays((int) config('registrar.booking.max_days_ahead'))
-            ->toDateString();
+        return TimeSlot::bookingHorizon()->toDateString();
     }
 
     /**
-     * Get the bookable slots on the chosen date.
-     *
-     * Slots only ever exist on days the office is open, so a weekend simply
-     * yields nothing - which is what the empty state explains.
+     * Get the slots on the chosen date.
      *
      * @return Collection<int, TimeSlot>
      */
     #[Computed]
     public function availableSlots(): Collection
     {
-        if ($this->date === '') {
-            return new Collection;
-        }
-
-        return TimeSlot::query()
-            ->onDate(CarbonImmutable::parse($this->date))
-            ->orderBy('start_time')
-            ->get();
+        return TimeSlot::offeredOn($this->date);
     }
 
     /**
@@ -86,7 +74,7 @@ new #[Title('Book an appointment')] class extends Component {
     }
 
     /**
-     * Choose a slot to book.
+     * Choose a slot.
      */
     public function selectSlot(int $slotId): void
     {
@@ -154,42 +142,7 @@ new #[Title('Book an appointment')] class extends Component {
         <div class="flex flex-col gap-3">
             <flux:heading size="sm">{{ __('Available time slots') }}</flux:heading>
 
-            @if ($this->availableSlots->isEmpty())
-                <x-empty-state
-                    icon="calendar"
-                    :heading="__('No slots on this date')"
-                    :description="__('The registrar\'s office is open Monday to Friday, 8:00 AM to 5:00 PM. Try another date.')"
-                    data-test="no-slots"
-                />
-            @else
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-test="slot-grid">
-                    @foreach ($this->availableSlots as $slot)
-                        <flux:button
-                            type="button"
-                            wire:key="slot-{{ $slot->id }}"
-                            wire:click="selectSlot({{ $slot->id }})"
-                            :variant="$selectedSlotId === $slot->id ? 'primary' : 'outline'"
-                            :disabled="$slot->isFull() || ! $slot->startsAt()->isFuture()"
-                            class="flex-col items-start gap-1 py-3"
-                            data-test="slot-option"
-                        >
-                            <span class="font-medium">{{ $slot->label }}</span>
-                            <span class="text-xs opacity-75">
-                                @if ($slot->isFull())
-                                    {{ __('Fully booked') }}
-                                @elseif (! $slot->startsAt()->isFuture())
-                                    {{ __('Passed') }}
-                                @else
-                                    {{ __(':count of :capacity left', [
-                                        'count' => $slot->remaining_capacity,
-                                        'capacity' => $slot->capacity,
-                                    ]) }}
-                                @endif
-                            </span>
-                        </flux:button>
-                    @endforeach
-                </div>
-            @endif
+            <x-appointment-slots :slots="$this->availableSlots" :selected-slot-id="$selectedSlotId" />
 
             <flux:error name="selectedSlotId" />
         </div>

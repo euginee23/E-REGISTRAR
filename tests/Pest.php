@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\StudentRegistryEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -88,4 +89,17 @@ function studentWithoutProfile(): User
 function alumnus(): User
 {
     return User::factory()->alumnus()->create();
+}
+
+/**
+ * Create an entry on the registrar's student roster.
+ *
+ * Registration is checked against this roster, so a test that registers an
+ * account needs a matching unclaimed entry first.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function registryEntry(array $attributes = []): StudentRegistryEntry
+{
+    return StudentRegistryEntry::factory()->create($attributes);
 }

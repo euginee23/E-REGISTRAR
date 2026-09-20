@@ -12,6 +12,7 @@ enum NotificationType: string
     case AppointmentConfirmed = 'appointment_confirmed';
     case AppointmentCancelled = 'appointment_cancelled';
     case AppointmentReminder = 'appointment_reminder';
+    case PaymentRecorded = 'payment_recorded';
 
     /**
      * Get the human-readable label for the notification type.
@@ -27,6 +28,7 @@ enum NotificationType: string
             self::AppointmentConfirmed => __('Appointment confirmed'),
             self::AppointmentCancelled => __('Appointment cancelled'),
             self::AppointmentReminder => __('Appointment reminder'),
+            self::PaymentRecorded => __('Payment recorded'),
         };
     }
 
@@ -42,6 +44,7 @@ enum NotificationType: string
             self::AppointmentBooked, self::AppointmentConfirmed => 'calendar-days',
             self::AppointmentCancelled => 'calendar',
             self::AppointmentReminder => 'bell-alert',
+            self::PaymentRecorded => 'banknotes',
         };
     }
 
@@ -56,6 +59,7 @@ enum NotificationType: string
             self::RequestRejected, self::AppointmentCancelled => 'red',
             self::AppointmentBooked, self::AppointmentConfirmed => 'green',
             self::AppointmentReminder => 'amber',
+            self::PaymentRecorded => 'green',
         };
     }
 

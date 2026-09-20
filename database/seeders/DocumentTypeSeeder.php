@@ -11,7 +11,9 @@ class DocumentTypeSeeder extends Seeder
      * Seed the academic documents the registrar's office issues.
      *
      * This is reference data rather than demo data, so it is seeded in every
-     * environment and matched on the slug to stay idempotent.
+     * environment and matched on the slug to stay idempotent. The fees are
+     * indicative: an administrator sets the office's real prices from the
+     * document types screen.
      */
     public function run(): void
     {
@@ -21,6 +23,8 @@ class DocumentTypeSeeder extends Seeder
                 'name' => 'Form 137',
                 'description' => "A student's permanent academic record from basic education.",
                 'processing_days' => 5,
+                'fee' => 150.00,
+                'requires_payment' => true,
                 'requires_custom_name' => false,
             ],
             [
@@ -28,6 +32,8 @@ class DocumentTypeSeeder extends Seeder
                 'name' => 'Transcript of Records',
                 'description' => "An official record of a student's academic performance and completed courses.",
                 'processing_days' => 7,
+                'fee' => 200.00,
+                'requires_payment' => true,
                 'requires_custom_name' => false,
             ],
             [
@@ -35,6 +41,8 @@ class DocumentTypeSeeder extends Seeder
                 'name' => 'Certificate of Enrollment',
                 'description' => 'Confirms that a student is currently enrolled in the institution.',
                 'processing_days' => 2,
+                'fee' => 0,
+                'requires_payment' => false,
                 'requires_custom_name' => false,
             ],
             [
@@ -42,6 +50,8 @@ class DocumentTypeSeeder extends Seeder
                 'name' => 'Good Moral Certificate',
                 'description' => "Attests to a student's good conduct while enrolled in the institution.",
                 'processing_days' => 3,
+                'fee' => 50.00,
+                'requires_payment' => true,
                 'requires_custom_name' => false,
             ],
             [
@@ -49,6 +59,8 @@ class DocumentTypeSeeder extends Seeder
                 'name' => 'Other Academic Document',
                 'description' => 'Any other academic record; the requester supplies the document name.',
                 'processing_days' => 5,
+                'fee' => 0,
+                'requires_payment' => false,
                 'requires_custom_name' => true,
             ],
         ];

@@ -25,9 +25,24 @@ class DocumentTypeFactory extends Factory
             'slug' => Str::slug($name),
             'description' => fake()->sentence(),
             'processing_days' => fake()->numberBetween(1, 7),
+            // Free by default, so the payment gate never surprises a test
+            // that is not about payment.
+            'fee' => 0,
+            'requires_payment' => false,
             'requires_custom_name' => false,
             'is_active' => true,
         ];
+    }
+
+    /**
+     * Indicate that the document must be paid for before it is processed.
+     */
+    public function chargeable(float $fee = 150): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'fee' => $fee,
+            'requires_payment' => true,
+        ]);
     }
 
     /**

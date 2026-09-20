@@ -55,6 +55,13 @@ class UserPolicy
             return false;
         }
 
+        // An account still awaiting review is let in by approving it, not by
+        // flipping its status here: going through this path would skip the
+        // reviewer record and the email telling the student they may log in.
+        if ($model->status === UserStatus::Pending) {
+            return false;
+        }
+
         return ! $this->isLastActiveAdministrator($model);
     }
 
@@ -68,6 +75,41 @@ class UserPolicy
         }
 
         return ! $this->isLastActiveAdministrator($model);
+    }
+
+    /**
+     * Determine whether the user may send the account a password reset link.
+     *
+     * The link only ever goes to the account's own address, so this hands
+     * over no access - but it is still administrator-only, because sending it
+     * on request is how someone with counter access would start an
+     * impersonation attempt.
+     */
+    public function resetPassword(User $user, User $model): bool
+    {
+        return $user->isAdministrator() && ! $user->is($model);
+    }
+
+    /**
+     * Determine whether the user may let a pending account in.
+     *
+     * Reviewing registrations is desk work rather than an administrator's
+     * job, so registrar staff may do it - but only for an account that is
+     * actually waiting, which keeps this away from existing accounts.
+     */
+    public function approve(User $user, User $model): bool
+    {
+        return $user->isStaff()
+            && ! $user->is($model)
+            && $model->status === UserStatus::Pending;
+    }
+
+    /**
+     * Determine whether the user may turn away a pending account.
+     */
+    public function reject(User $user, User $model): bool
+    {
+        return $this->approve($user, $model);
     }
 
     /**

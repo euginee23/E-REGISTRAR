@@ -15,6 +15,8 @@ new #[Title('Document types')] class extends Component {
     public string $name = '';
     public string $description = '';
     public int $processingDays = 3;
+    public float $fee = 0;
+    public bool $requiresPayment = false;
     public bool $requiresCustomName = false;
 
     /**
@@ -46,7 +48,7 @@ new #[Title('Document types')] class extends Component {
     {
         Gate::authorize('create', DocumentType::class);
 
-        $this->reset('editingId', 'name', 'description', 'requiresCustomName');
+        $this->reset('editingId', 'name', 'description', 'fee', 'requiresPayment', 'requiresCustomName');
         $this->processingDays = 3;
         $this->resetValidation();
 
@@ -66,6 +68,8 @@ new #[Title('Document types')] class extends Component {
         $this->name = $type->name;
         $this->description = $type->description ?? '';
         $this->processingDays = $type->processing_days;
+        $this->fee = (float) $type->fee;
+        $this->requiresPayment = $type->requires_payment;
         $this->requiresCustomName = $type->requires_custom_name;
         $this->resetValidation();
 
@@ -90,13 +94,21 @@ new #[Title('Document types')] class extends Component {
             ],
             'description' => ['nullable', 'string', 'max:500'],
             'processingDays' => ['required', 'integer', 'min:1', 'max:60'],
+            // A chargeable document needs an actual price; a free one is
+            // allowed to sit at zero.
+            'fee' => ['required', 'numeric', $this->requiresPayment ? 'min:0.01' : 'min:0', 'max:99999.99'],
+            'requiresPayment' => ['boolean'],
             'requiresCustomName' => ['boolean'],
+        ], [
+            'fee.min' => __('A document that must be paid for needs a fee above zero.'),
         ]);
 
         $attributes = [
             'name' => $validated['name'],
             'description' => $validated['description'] ?: null,
             'processing_days' => $validated['processingDays'],
+            'fee' => $validated['fee'],
+            'requires_payment' => $validated['requiresPayment'],
             'requires_custom_name' => $validated['requiresCustomName'],
         ];
 
@@ -150,6 +162,7 @@ new #[Title('Document types')] class extends Component {
         <flux:table.columns>
             <flux:table.column>{{ __('Document') }}</flux:table.column>
             <flux:table.column>{{ __('Processing days') }}</flux:table.column>
+            <flux:table.column>{{ __('Fee') }}</flux:table.column>
             <flux:table.column>{{ __('Requests') }}</flux:table.column>
             <flux:table.column>{{ __('State') }}</flux:table.column>
             <flux:table.column />
@@ -169,6 +182,13 @@ new #[Title('Document types')] class extends Component {
                         </div>
                     </flux:table.cell>
                     <flux:table.cell class="tabular-nums">{{ $type->processing_days }}</flux:table.cell>
+                    <flux:table.cell class="tabular-nums">
+                        @if ($type->requires_payment)
+                            <span data-test="type-fee">₱{{ number_format((float) $type->fee, 2) }}</span>
+                        @else
+                            <flux:text size="sm" class="text-zinc-400">{{ __('Free') }}</flux:text>
+                        @endif
+                    </flux:table.cell>
                     <flux:table.cell class="tabular-nums">{{ $type->document_requests_count }}</flux:table.cell>
                     <flux:table.cell>
                         <flux:badge :color="$type->is_active ? 'green' : 'zinc'" size="sm">
@@ -227,6 +247,22 @@ new #[Title('Document types')] class extends Component {
                 max="60"
                 required
                 data-test="type-days-input"
+            />
+
+            <flux:switch
+                wire:model.live="requiresPayment"
+                :label="__('Must be paid for before processing')"
+                :description="__('The registrar records the cashier\'s receipt before the request can be started.')"
+                data-test="type-requires-payment-switch"
+            />
+
+            <flux:input
+                wire:model="fee"
+                :label="__('Fee')"
+                type="number"
+                step="0.01"
+                min="0"
+                data-test="type-fee-input"
             />
 
             <flux:switch

@@ -2,16 +2,16 @@
 
 use App\Models\DocumentRequest;
 
-test('a student without a profile is redirected out of the student area', function (string $route) {
+test('a student without a profile is redirected out of the student area', function (string $routeName) {
     $this->actingAs(studentWithoutProfile());
 
-    $this->get($route)
+    $this->get(route($routeName))
         ->assertRedirect(route('student-profile.edit'))
         ->assertSessionHas('status', 'student-profile-required');
-})->with(fn () => [
-    route('student.requests.index'),
-    route('student.requests.create'),
-    route('student.appointments.index'),
+})->with([
+    'student.requests.index',
+    'student.requests.create',
+    'student.appointments.index',
 ]);
 
 test('a student without a profile is redirected away from a single request', function () {

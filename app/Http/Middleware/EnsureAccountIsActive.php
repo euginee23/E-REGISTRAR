@@ -29,7 +29,7 @@ class EnsureAccountIsActive
             $request->session()->regenerateToken();
 
             return redirect()->route('login')->withErrors([
-                'email' => __('Your account is not active. Please contact the registrar\'s office.'),
+                'email' => $user->status->signInMessage(),
             ]);
         }
 

@@ -5,6 +5,7 @@ namespace App\Actions\Requests;
 use App\Actions\Notifications\SendNotification;
 use App\Enums\NotificationType;
 use App\Enums\RequestStatus;
+use App\Exceptions\PaymentRequiredException;
 use App\Models\DocumentRequest;
 use App\Models\RequestStatusHistory;
 use App\Models\User;
@@ -28,6 +29,13 @@ class TransitionRequestStatus
         User $actor,
         ?string $remarks = null,
     ): DocumentRequest {
+        // Checked before authorizing so the operator is told the fee is
+        // outstanding, rather than being handed a bare "not allowed" by the
+        // policy rule that enforces the same thing.
+        if ($to === RequestStatus::Processing && $documentRequest->awaitsPayment()) {
+            throw PaymentRequiredException::make($documentRequest);
+        }
+
         if (! $actor->can('transition', [$documentRequest, $to])) {
             throw new UnauthorizedException(
                 "Cannot move request {$documentRequest->reference_no} to {$to->value}.",

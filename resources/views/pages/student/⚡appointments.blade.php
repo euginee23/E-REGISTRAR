@@ -142,6 +142,18 @@ new #[Title('My appointments')] class extends Component {
                             {{ __('View request') }}
                         </flux:button>
 
+                        @can('reschedule', $appointment)
+                            <flux:button
+                                :href="route('student.appointments.reschedule', $appointment)"
+                                size="xs"
+                                variant="subtle"
+                                wire:navigate
+                                data-test="reschedule-appointment-link"
+                            >
+                                {{ __('Reschedule') }}
+                            </flux:button>
+                        @endcan
+
                         @can('cancel', $appointment)
                             <flux:modal.trigger :name="'cancel-appointment-' . $appointment->id">
                                 <flux:button size="xs" variant="subtle" data-test="cancel-appointment-trigger">

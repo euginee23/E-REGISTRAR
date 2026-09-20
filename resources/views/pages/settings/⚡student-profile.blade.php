@@ -48,7 +48,7 @@ new #[Title('Student profile')] class extends Component {
         $user = Auth::user();
 
         $user->student()->updateOrCreate([], [
-            'student_number' => $validated['student_number'] ?: null,
+            'student_number' => $validated['student_number'],
             'course' => $validated['course'],
             'enrollment_status' => $enrollmentStatus,
             'year_graduated' => $enrollmentStatus->requiresYearGraduated()
@@ -90,8 +90,9 @@ new #[Title('Student profile')] class extends Component {
             <flux:input
                 wire:model="student_number"
                 :label="__('Student number')"
-                :description="__('Optional. Helps the registrar locate your records faster.')"
+                :description="__('As printed on your student ID.')"
                 type="text"
+                required
                 autocomplete="off"
                 data-test="student-number-input"
             />

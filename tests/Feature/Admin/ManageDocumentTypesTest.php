@@ -163,3 +163,59 @@ test('a catch-all type can be flagged to take a free-text name', function () {
     expect(DocumentType::query()->where('name', 'Other Academic Record')->firstOrFail()->requires_custom_name)
         ->toBeTrue();
 });
+
+test('an administrator can mark a document as chargeable', function () {
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.document-types')
+        ->call('createType')
+        ->set('name', 'Diploma')
+        ->set('processingDays', 5)
+        ->set('requiresPayment', true)
+        ->set('fee', 250)
+        ->call('saveType')
+        ->assertHasNoErrors();
+
+    $type = DocumentType::query()->where('name', 'Diploma')->firstOrFail();
+
+    expect($type->requires_payment)->toBeTrue()
+        ->and((float) $type->fee)->toBe(250.0);
+});
+
+test('a chargeable document cannot be left at a zero fee', function () {
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.document-types')
+        ->call('createType')
+        ->set('name', 'Diploma')
+        ->set('processingDays', 5)
+        ->set('requiresPayment', true)
+        ->set('fee', 0)
+        ->call('saveType')
+        ->assertHasErrors('fee');
+});
+
+test('a free document is happy at a zero fee', function () {
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.document-types')
+        ->call('createType')
+        ->set('name', 'Certificate of Good Standing')
+        ->set('processingDays', 2)
+        ->set('fee', 0)
+        ->call('saveType')
+        ->assertHasNoErrors();
+
+    expect(DocumentType::query()->where('name', 'Certificate of Good Standing')->firstOrFail()->requires_payment)
+        ->toBeFalse();
+});
+
+test('the fee is shown on the document types table', function () {
+    DocumentType::factory()->chargeable(175)->create(['name' => 'Priced Document']);
+
+    $this->actingAs(administrator());
+
+    $this->get(route('admin.document-types.index'))
+        ->assertOk()
+        ->assertSee('175.00');
+});

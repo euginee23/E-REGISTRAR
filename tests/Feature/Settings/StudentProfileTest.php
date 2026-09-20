@@ -51,6 +51,7 @@ test('saving creates the profile when the student has none', function () {
     $this->actingAs($user);
 
     Livewire::test('pages::settings.student-profile')
+        ->set('student_number', '2024-00001')
         ->set('course', 'BS Nursing')
         ->set('contact_number', '09171112222')
         ->call('updateStudentProfile')
@@ -59,6 +60,7 @@ test('saving creates the profile when the student has none', function () {
     $student = $user->refresh()->student;
 
     expect($student)->not->toBeNull()
+        ->and($student->student_number)->toBe('2024-00001')
         ->and($student->course)->toBe('BS Nursing')
         ->and($student->contact_number)->toBe('09171112222')
         ->and($student->enrollment_status)->toBe(EnrollmentStatus::Enrolled);
@@ -69,6 +71,7 @@ test('a newly created profile unblocks the student area', function () {
     $this->actingAs($user);
 
     Livewire::test('pages::settings.student-profile')
+        ->set('student_number', '2024-00002')
         ->set('course', 'BS Nursing')
         ->set('contact_number', '09171112222')
         ->call('updateStudentProfile')
@@ -122,14 +125,14 @@ test('a student cannot take another student\'s number', function () {
         ->assertHasErrors('student_number');
 });
 
-test('the course and contact number are required', function (string $field) {
+test('the identifying profile fields are required', function (string $field) {
     $this->actingAs(student());
 
     Livewire::test('pages::settings.student-profile')
         ->set($field, '')
         ->call('updateStudentProfile')
         ->assertHasErrors($field);
-})->with(['course', 'contact_number']);
+})->with(['student_number', 'course', 'contact_number']);
 
 test('staff never see the student profile link in settings', function () {
     $this->actingAs(registrarStaff());

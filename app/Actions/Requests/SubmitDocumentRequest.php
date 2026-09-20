@@ -5,6 +5,7 @@ namespace App\Actions\Requests;
 use App\Actions\Notifications\SendNotification;
 use App\Concerns\DocumentRequestValidationRules;
 use App\Enums\NotificationType;
+use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
 use App\Enums\UserRole;
 use App\Models\DocumentRequest;
@@ -86,6 +87,13 @@ class SubmitDocumentRequest
                 'purpose' => $purpose,
                 'copies' => $copies,
                 'status' => RequestStatus::Pending,
+                'payment_status' => $documentType->requires_payment
+                    ? PaymentStatus::Unpaid
+                    : PaymentStatus::NotRequired,
+                // Snapshotted rather than read back from the document type,
+                // so repricing later never changes what this student was
+                // asked to pay.
+                'fee_amount' => $documentType->feeFor($copies),
             ]);
 
             $this->storeAttachments($documentRequest, $attachments);

@@ -82,3 +82,19 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/*
+ * Printing the transaction slip. Everything else is handled with Tailwind's
+ * `print:` variants on the slip itself; these are the bits that cannot be
+ * expressed as utilities.
+ */
+@media print {
+    @page {
+        margin: 12mm;
+    }
+
+    html,
+    body {
+        background: #fff !important;
+    }
+}

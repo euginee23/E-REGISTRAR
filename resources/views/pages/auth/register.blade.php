@@ -72,7 +72,8 @@
                 :label="__('Student number')"
                 :value="old('student_number')"
                 type="text"
-                :description="__('Optional. Helps the registrar locate your records faster.')"
+                required
+                :description="__('As printed on your student ID.')"
                 :placeholder="__('2022-10231')"
             />
 

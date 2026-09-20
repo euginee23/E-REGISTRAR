@@ -8,8 +8,11 @@ use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,6 +28,9 @@ use Illuminate\Support\Str;
  * @property string $password
  * @property UserRole $role
  * @property UserStatus $status
+ * @property int|null $approved_by_user_id
+ * @property Carbon|null $approved_at
+ * @property string|null $rejection_reason
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -32,6 +38,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Student|null $student
+ * @property-read User|null $approvedBy
+ * @property-read StudentRegistryEntry|null $registryEntry
  * @property-read Collection<int, Notification> $registrarNotifications
  * @property-read Collection<int, DocumentRequest> $processedRequests
  */
@@ -61,6 +69,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'approved_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
             'status' => UserStatus::class,
@@ -75,6 +84,28 @@ class User extends Authenticatable
     public function student(): HasOne
     {
         return $this->hasOne(Student::class);
+    }
+
+    /**
+     * Get the roster entry this account was registered against.
+     *
+     * Staff accounts and any account an administrator created have none.
+     *
+     * @return HasOne<StudentRegistryEntry, $this>
+     */
+    public function registryEntry(): HasOne
+    {
+        return $this->hasOne(StudentRegistryEntry::class, 'claimed_by_user_id');
+    }
+
+    /**
+     * Get the staff member who reviewed this account.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by_user_id');
     }
 
     /**
@@ -125,6 +156,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Determine whether the account is waiting on the registrar's review.
+     */
+    public function isPending(): bool
+    {
+        return $this->status->awaitsApproval();
+    }
+
+    /**
      * Determine whether the user works inside the registrar's office.
      */
     public function isStaff(): bool
@@ -148,6 +187,17 @@ class User extends Authenticatable
     public function markAllNotificationsRead(): int
     {
         return $this->registrarNotifications()->unread()->update(['is_read' => true]);
+    }
+
+    /**
+     * Scope the query to accounts waiting on the registrar's review.
+     *
+     * @param  Builder<User>  $query
+     */
+    #[Scope]
+    protected function pending(Builder $query): void
+    {
+        $query->where('status', UserStatus::Pending);
     }
 
     /**

@@ -20,11 +20,17 @@ Route::middleware(['auth', 'verified', 'role:administrator,registrar_staff'])
         Route::livewire('reports', 'pages::registrar.reports')
             ->name('registrar.reports.index');
 
+        Route::livewire('pending-accounts', 'pages::registrar.pending-accounts')
+            ->name('registrar.pending-accounts.index');
+
         Route::middleware(['role:administrator'])->prefix('admin')->group(function () {
             Route::livewire('users', 'pages::admin.users')
                 ->name('admin.users.index');
 
             Route::livewire('document-types', 'pages::admin.document-types')
                 ->name('admin.document-types.index');
+
+            Route::livewire('student-registry', 'pages::admin.student-registry')
+                ->name('admin.student-registry.index');
         });
     });

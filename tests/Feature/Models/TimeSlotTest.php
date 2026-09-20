@@ -93,3 +93,34 @@ test('the available scope excludes full slots', function () {
 
     expect(TimeSlot::query()->available()->count())->toBe(1);
 });
+
+test('the booking horizon comes from the configured window', function () {
+    config(['registrar.booking.max_days_ahead' => 30]);
+
+    expect(TimeSlot::bookingHorizon()->toDateString())
+        ->toBe(CarbonImmutable::today()->addDays(30)->toDateString());
+});
+
+test('slots offered on a date come back in the order the day runs', function () {
+    $date = CarbonImmutable::today()->addWeekday();
+
+    TimeSlot::factory()->onDate($date)->startingAt(14)->create();
+    TimeSlot::factory()->onDate($date)->startingAt(9)->create();
+
+    expect(TimeSlot::offeredOn($date->toDateString())->pluck('start_time')->first())
+        ->toContain('09:00');
+});
+
+test('an empty date offers nothing', function () {
+    TimeSlot::factory()->onDate(CarbonImmutable::today()->addWeekday())->create();
+
+    expect(TimeSlot::offeredOn('')->count())->toBe(0);
+});
+
+test('a closed slot is never offered', function () {
+    $date = CarbonImmutable::today()->addWeekday();
+
+    TimeSlot::factory()->onDate($date)->startingAt(9)->create(['is_active' => false]);
+
+    expect(TimeSlot::offeredOn($date->toDateString())->count())->toBe(0);
+});

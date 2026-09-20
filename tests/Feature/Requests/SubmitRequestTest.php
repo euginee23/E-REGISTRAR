@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\Requests\SubmitDocumentRequest;
 use App\Enums\NotificationType;
+use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
@@ -238,4 +240,62 @@ test('a student can drop a file before submitting', function () {
         ])
         ->call('removeAttachment', 0)
         ->assertCount('attachments', 1);
+});
+
+test('a chargeable document snapshots its fee onto the request', function () {
+    $student = student();
+    $type = DocumentType::factory()->chargeable(200)->create();
+
+    $documentRequest = app(SubmitDocumentRequest::class)(
+        student: $student->student,
+        documentType: $type,
+        purpose: 'Employment requirement',
+        copies: 1,
+    );
+
+    expect($documentRequest->payment_status)->toBe(PaymentStatus::Unpaid)
+        ->and((float) $documentRequest->fee_amount)->toBe(200.0);
+});
+
+test('the fee is charged per copy', function () {
+    $student = student();
+    $type = DocumentType::factory()->chargeable(150)->create();
+
+    $documentRequest = app(SubmitDocumentRequest::class)(
+        student: $student->student,
+        documentType: $type,
+        purpose: 'Employment requirement',
+        copies: 3,
+    );
+
+    expect((float) $documentRequest->fee_amount)->toBe(450.0);
+});
+
+test('a free document produces a request with nothing to collect', function () {
+    $student = student();
+    $type = DocumentType::factory()->create();
+
+    $documentRequest = app(SubmitDocumentRequest::class)(
+        student: $student->student,
+        documentType: $type,
+        purpose: 'Employment requirement',
+    );
+
+    expect($documentRequest->payment_status)->toBe(PaymentStatus::NotRequired)
+        ->and((float) $documentRequest->fee_amount)->toBe(0.0);
+});
+
+test('repricing a document never changes what an existing request owes', function () {
+    $student = student();
+    $type = DocumentType::factory()->chargeable(150)->create();
+
+    $documentRequest = app(SubmitDocumentRequest::class)(
+        student: $student->student,
+        documentType: $type,
+        purpose: 'Employment requirement',
+    );
+
+    $type->update(['fee' => 500]);
+
+    expect((float) $documentRequest->refresh()->fee_amount)->toBe(150.0);
 });

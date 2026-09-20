@@ -22,6 +22,7 @@ test('a deactivated user is signed out mid-session', function (UserStatus $statu
 })->with([
     UserStatus::Suspended,
     UserStatus::Inactive,
+    UserStatus::Pending,
 ]);
 
 test('a deactivated user cannot reach the settings screens either', function () {

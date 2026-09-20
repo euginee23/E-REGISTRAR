@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\DocumentType;
+use App\Models\StudentRegistryEntry;
 use App\Models\TimeSlot;
 use Carbon\CarbonImmutable;
+use Database\Seeders\DemoUserSeeder;
 use Database\Seeders\DocumentTypeSeeder;
+use Database\Seeders\StudentRegistrySeeder;
 use Database\Seeders\TimeSlotSeeder;
 
 test('the document type seeder creates the registrar\'s issuable documents', function () {
@@ -84,4 +87,53 @@ test('the time slot seeder covers the coming weeks', function () {
     $latest = TimeSlot::query()->max('slot_date');
 
     expect(CarbonImmutable::parse($latest)->greaterThan(CarbonImmutable::today()->addWeeks(3)))->toBeTrue();
+});
+
+test('the student registry seeder stocks the roster registration checks against', function () {
+    $this->seed(StudentRegistrySeeder::class);
+
+    expect(StudentRegistryEntry::query()->count())->toBeGreaterThan(0)
+        ->and(StudentRegistryEntry::query()->where('student_number', '2022-10231')->exists())->toBeTrue();
+});
+
+test('the student registry seeder is idempotent', function () {
+    $this->seed(StudentRegistrySeeder::class);
+    $count = StudentRegistryEntry::query()->count();
+
+    $this->seed(StudentRegistrySeeder::class);
+
+    expect(StudentRegistryEntry::query()->count())->toBe($count);
+});
+
+test('the demo students claim their roster entries', function () {
+    $this->seed(StudentRegistrySeeder::class);
+    $this->seed(DemoUserSeeder::class);
+
+    $entry = StudentRegistryEntry::query()->where('student_number', '2022-10231')->firstOrFail();
+
+    expect($entry->isClaimed())->toBeTrue()
+        ->and($entry->claimedBy->email)->toBe('student@e-registrar.test');
+});
+
+test('re-running the demo seeder never detaches an account from its roster entry', function () {
+    $this->seed(StudentRegistrySeeder::class);
+    $this->seed(DemoUserSeeder::class);
+    $this->seed(StudentRegistrySeeder::class);
+
+    expect(StudentRegistryEntry::query()->where('student_number', '2022-10231')->firstOrFail()->isClaimed())
+        ->toBeTrue();
+});
+
+test('the seeded transcript and form 137 must be paid for', function () {
+    $this->seed(DocumentTypeSeeder::class);
+
+    $chargeable = DocumentType::query()->where('requires_payment', true)->pluck('slug')->all();
+
+    expect($chargeable)->toEqualCanonicalizing(['form-137', 'transcript-of-records', 'good-moral-certificate']);
+});
+
+test('every chargeable seeded document carries a fee above zero', function () {
+    $this->seed(DocumentTypeSeeder::class);
+
+    expect(DocumentType::query()->where('requires_payment', true)->where('fee', '<=', 0)->count())->toBe(0);
 });

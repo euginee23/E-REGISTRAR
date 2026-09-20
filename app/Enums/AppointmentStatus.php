@@ -39,6 +39,23 @@ enum AppointmentStatus: string
     }
 
     /**
+     * Get the Tailwind background class for the calendar's status dots.
+     *
+     * Kept beside the badge colour so the month grid never hand-rolls its own
+     * mapping and drift between the two views is impossible.
+     */
+    public function dotClass(): string
+    {
+        return match ($this) {
+            self::Scheduled => 'bg-amber-500',
+            self::Confirmed => 'bg-blue-500',
+            self::Completed => 'bg-green-500',
+            self::Cancelled => 'bg-zinc-400',
+            self::NoShow => 'bg-red-500',
+        };
+    }
+
+    /**
      * Determine whether an appointment in this status consumes a slot seat.
      *
      * This is the single definition of "booked" in the system. Booking,

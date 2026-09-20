@@ -29,12 +29,16 @@ trait StudentProfileValidationRules
     /**
      * Get the validation rules used to validate student numbers.
      *
+     * The registrar identifies every record by student number, so it is
+     * mandatory rather than a convenience: a profile without one cannot be
+     * matched against the academic records the request is drawn from.
+     *
      * @return array<int, ValidationRule|array<mixed>|string>
      */
     protected function studentNumberRules(?int $studentId = null): array
     {
         return [
-            'nullable',
+            'required',
             'string',
             'max:32',
             $studentId === null

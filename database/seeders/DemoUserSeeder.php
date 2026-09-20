@@ -6,6 +6,7 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Student;
+use App\Models\StudentRegistryEntry;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -64,5 +65,23 @@ class DemoUserSeeder extends Seeder
                 'contact_number' => '09171234567',
             ],
         );
+
+        $this->claimRegistryEntry($user, $studentNumber);
+    }
+
+    /**
+     * Mark the demo account's roster entry as claimed.
+     *
+     * Registration does this for a real account, so the seeded data would
+     * otherwise leave the entry looking available to a second registration.
+     */
+    private function claimRegistryEntry(User $user, string $studentNumber): void
+    {
+        StudentRegistryEntry::query()
+            ->where('student_number', $studentNumber)
+            ->update([
+                'claimed_by_user_id' => $user->id,
+                'claimed_at' => now(),
+            ]);
     }
 }

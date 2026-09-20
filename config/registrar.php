@@ -15,6 +15,9 @@ return [
     */
 
     'office' => [
+        'name' => env('REGISTRAR_OFFICE_NAME', 'Office of the University Registrar'),
+        'address' => env('REGISTRAR_OFFICE_ADDRESS', 'Ground Floor, Administration Building'),
+        'contact' => env('REGISTRAR_OFFICE_CONTACT', 'registrar@example.edu'),
         'opens_at' => env('REGISTRAR_OPENS_AT', '08:00'),
         'closes_at' => env('REGISTRAR_CLOSES_AT', '17:00'),
         'open_days' => [1, 2, 3, 4, 5],
@@ -50,6 +53,53 @@ return [
     'reference' => [
         'prefix' => 'REG',
         'pad' => 6,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sidebar Badges
+    |--------------------------------------------------------------------------
+    |
+    | How long the sidebar's counts are cached, and how often the sidebar asks
+    | for fresh ones. The sidebar renders on every page, so the counts are
+    | worth caching; a badge that lags a little costs nothing.
+    |
+    */
+
+    'nav' => [
+        'badge_ttl' => 30,
+        'poll' => '60s',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Every in-app notification is mirrored to the recipient by email. The
+    | emails are queued, so a worker must be running for them to leave; turn
+    | the mirror off where no worker is available and the bell still works.
+    |
+    */
+
+    'notifications' => [
+        'mail' => env('REGISTRAR_MAIL_NOTIFICATIONS', true),
+        'queue' => env('REGISTRAR_MAIL_QUEUE', 'default'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Registry
+    |--------------------------------------------------------------------------
+    |
+    | The roster of students the school enrolled, which registration is checked
+    | against so an account cannot be opened against someone else's student
+    | number. Imports are capped so a mistaken upload cannot exhaust memory.
+    |
+    */
+
+    'registry' => [
+        'max_import_rows' => 5000,
     ],
 
     /*

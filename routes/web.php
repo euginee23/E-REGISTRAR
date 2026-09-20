@@ -12,6 +12,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('attachments.download');
 
     Route::livewire('notifications', 'pages::notifications')->name('notifications.index');
+
+    // One slip serves students and staff alike; the page authorizes the
+    // viewer against the request itself.
+    Route::livewire('requests/{documentRequest}/slip', 'pages::requests.slip')
+        ->name('requests.slip');
 });
 
 require __DIR__.'/settings.php';

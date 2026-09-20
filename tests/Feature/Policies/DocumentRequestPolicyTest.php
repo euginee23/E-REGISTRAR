@@ -111,3 +111,31 @@ test('administrators are granted staff abilities by the policy itself', function
     expect(administrator()->can('update', $request))->toBeTrue()
         ->and(administrator()->can('view', $request))->toBeTrue();
 });
+
+test('an unpaid request may not be moved into processing', function () {
+    $documentRequest = DocumentRequest::factory()->unpaid()->create();
+
+    expect(registrarStaff()->can('transition', [$documentRequest, RequestStatus::Processing]))->toBeFalse();
+});
+
+test('a settled request may be moved into processing', function () {
+    foreach ([DocumentRequest::factory()->paid()->create(), DocumentRequest::factory()->create()] as $documentRequest) {
+        expect(registrarStaff()->can('transition', [$documentRequest, RequestStatus::Processing]))->toBeTrue();
+    }
+});
+
+test('an unpaid request may still be rejected', function () {
+    $documentRequest = DocumentRequest::factory()->unpaid()->create();
+
+    expect(registrarStaff()->can('transition', [$documentRequest, RequestStatus::Rejected]))->toBeTrue();
+});
+
+test('only staff may record a payment, and only where a fee exists', function () {
+    $chargeable = DocumentRequest::factory()->unpaid()->create();
+    $free = DocumentRequest::factory()->create();
+
+    expect(registrarStaff()->can('recordPayment', $chargeable))->toBeTrue()
+        ->and(administrator()->can('recordPayment', $chargeable))->toBeTrue()
+        ->and($chargeable->student->user->can('recordPayment', $chargeable))->toBeFalse()
+        ->and(registrarStaff()->can('recordPayment', $free))->toBeFalse();
+});

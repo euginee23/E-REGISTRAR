@@ -117,6 +117,7 @@ new #[Title('My requests')] class extends Component {
                 <flux:table.column>{{ __('Copies') }}</flux:table.column>
                 <flux:table.column>{{ __('Submitted') }}</flux:table.column>
                 <flux:table.column>{{ __('Appointment') }}</flux:table.column>
+                <flux:table.column>{{ __('Payment') }}</flux:table.column>
                 <flux:table.column>{{ __('Status') }}</flux:table.column>
                 <flux:table.column />
             </flux:table.columns>
@@ -134,6 +135,13 @@ new #[Title('My requests')] class extends Component {
                                 {{ $request->appointment->timeSlot->label }}
                             @else
                                 <flux:text size="sm" class="text-zinc-400">{{ __('Not booked') }}</flux:text>
+                            @endif
+                        </flux:table.cell>
+                        <flux:table.cell>
+                            @if ($request->payment_status === App\Enums\PaymentStatus::NotRequired)
+                                <flux:text size="sm" class="text-zinc-400">{{ __('No fee') }}</flux:text>
+                            @else
+                                <x-status-badge :status="$request->payment_status" />
                             @endif
                         </flux:table.cell>
                         <flux:table.cell><x-status-badge :status="$request->status" /></flux:table.cell>

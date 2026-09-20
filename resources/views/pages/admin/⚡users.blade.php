@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Users\SendPasswordResetLink;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\UserRole;
@@ -9,6 +10,7 @@ use Flux\Flux;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -172,6 +174,30 @@ new #[Title('User accounts')] class extends Component {
     }
 
     /**
+     * Email the account holder a link to set a new password.
+     */
+    public function sendResetLink(int $userId, SendPasswordResetLink $sendPasswordResetLink): void
+    {
+        $user = User::query()->findOrFail($userId);
+
+        Gate::authorize('resetPassword', $user);
+
+        $status = $sendPasswordResetLink($user, Auth::user());
+
+        if ($status === Password::RESET_THROTTLED) {
+            Flux::toast(variant: 'warning', text: __('A reset link was sent to :email very recently. Try again in a minute.', [
+                'email' => $user->email,
+            ]));
+
+            return;
+        }
+
+        Flux::toast(variant: 'success', text: __('A reset link has been emailed to :email.', [
+            'email' => $user->email,
+        ]));
+    }
+
+    /**
      * Suspend or reactivate an account.
      */
     public function toggleStatus(int $userId): void
@@ -281,6 +307,29 @@ new #[Title('User accounts')] class extends Component {
                                     {{ $user->status === App\Enums\UserStatus::Active ? __('Suspend') : __('Reactivate') }}
                                 </flux:button>
                             @endcan
+
+                            @can('resetPassword', $user)
+                                <flux:button
+                                    wire:click="sendResetLink({{ $user->id }})"
+                                    size="xs"
+                                    variant="subtle"
+                                    data-test="send-reset-link"
+                                >
+                                    {{ __('Send reset link') }}
+                                </flux:button>
+                            @endcan
+
+                            @if ($user->isPending())
+                                <flux:button
+                                    :href="route('registrar.pending-accounts.index')"
+                                    size="xs"
+                                    variant="subtle"
+                                    wire:navigate
+                                    data-test="review-pending"
+                                >
+                                    {{ __('Review') }}
+                                </flux:button>
+                            @endif
                         </div>
                     </flux:table.cell>
                 </flux:table.row>

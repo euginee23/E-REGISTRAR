@@ -91,6 +91,37 @@ class TimeSlot extends Model
     }
 
     /**
+     * Get the last date the office is currently accepting bookings for.
+     *
+     * Shared by every screen that offers a slot to pick, so the booking
+     * horizon is stated once.
+     */
+    public static function bookingHorizon(): CarbonImmutable
+    {
+        return CarbonImmutable::today()->addDays((int) config('registrar.booking.max_days_ahead'));
+    }
+
+    /**
+     * Get the slots offered on a date, in the order the day runs.
+     *
+     * An empty date - or a day the office is closed - simply yields nothing,
+     * which is what the pickers' empty state explains.
+     *
+     * @return Collection<int, TimeSlot>
+     */
+    public static function offeredOn(string $date): Collection
+    {
+        if (trim($date) === '') {
+            return new Collection;
+        }
+
+        return self::query()
+            ->onDate(CarbonImmutable::parse($date))
+            ->orderBy('start_time')
+            ->get();
+    }
+
+    /**
      * Determine whether every seat in the slot is taken.
      */
     public function isFull(): bool

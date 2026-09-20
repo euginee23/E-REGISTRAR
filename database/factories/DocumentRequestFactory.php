@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentStatus;
 use App\Enums\RequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
@@ -38,7 +39,40 @@ class DocumentRequestFactory extends Factory
             ]),
             'copies' => fake()->numberBetween(1, 3),
             'status' => RequestStatus::Pending,
+            // Free of charge by default: a fee is an explicit choice of the
+            // test that cares about one, so nothing else has to think about
+            // the payment gate.
+            'payment_status' => PaymentStatus::NotRequired,
+            'fee_amount' => 0,
         ];
+    }
+
+    /**
+     * Indicate that the request carries a fee nobody has collected yet.
+     */
+    public function unpaid(float $fee = 150): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'document_type_id' => DocumentType::factory()->chargeable($fee),
+            'payment_status' => PaymentStatus::Unpaid,
+            'fee_amount' => $fee,
+        ]);
+    }
+
+    /**
+     * Indicate that the fee on the request has been collected.
+     */
+    public function paid(float $fee = 150): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'document_type_id' => DocumentType::factory()->chargeable($fee),
+            'payment_status' => PaymentStatus::Paid,
+            'fee_amount' => $fee,
+            'amount_paid' => $fee,
+            'or_number' => 'OR-'.fake()->unique()->numerify('######'),
+            'paid_at' => now(),
+            'recorded_by_user_id' => User::factory()->registrarStaff(),
+        ]);
     }
 
     /**

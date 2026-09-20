@@ -31,3 +31,13 @@ test('cancelling or missing an appointment frees the seat', function (Appointmen
     AppointmentStatus::Cancelled,
     AppointmentStatus::NoShow,
 ]);
+
+test('every status has a calendar dot colour', function (AppointmentStatus $status) {
+    expect($status->dotClass())->toStartWith('bg-');
+})->with(AppointmentStatus::cases());
+
+test('the dot colours are distinct per status', function () {
+    $classes = array_map(fn (AppointmentStatus $s): string => $s->dotClass(), AppointmentStatus::cases());
+
+    expect($classes)->toBe(array_unique($classes));
+});

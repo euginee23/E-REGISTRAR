@@ -76,6 +76,17 @@ new class extends Component {
             {{ __('Back to my requests') }}
         </flux:button>
 
+        <flux:button
+            :href="route('requests.slip', $documentRequest)"
+            variant="filled"
+            size="sm"
+            icon="printer"
+            target="_blank"
+            data-test="print-slip-link"
+        >
+            {{ __('Print transaction slip') }}
+        </flux:button>
+
         @if ($this->canCancel)
             <flux:modal.trigger name="cancel-request">
                 <flux:button variant="danger" size="sm" data-test="cancel-request-trigger">
@@ -129,6 +140,53 @@ new class extends Component {
                     @endif
                 </dl>
             </flux:card>
+
+            @if ($documentRequest->payment_status !== App\Enums\PaymentStatus::NotRequired)
+                <flux:card class="flex flex-col gap-4" data-test="student-payment-card">
+                    <div class="flex items-center justify-between gap-4">
+                        <flux:heading size="sm">{{ __('Fee & payment') }}</flux:heading>
+                        <x-status-badge :status="$documentRequest->payment_status" />
+                    </div>
+
+                    <flux:separator />
+
+                    @if ($documentRequest->awaitsPayment())
+                        <flux:callout variant="warning" icon="banknotes" data-test="student-payment-callout">
+                            <flux:callout.heading>
+                                {{ __('Pay :amount at the cashier', [
+                                    'amount' => '₱' . number_format((float) $documentRequest->fee_amount, 2),
+                                ]) }}
+                            </flux:callout.heading>
+                            <flux:callout.text>
+                                {{ __('Processing starts once the registrar has recorded your payment. Bring your reference number, :reference.', [
+                                    'reference' => $documentRequest->reference_no,
+                                ]) }}
+                            </flux:callout.text>
+                        </flux:callout>
+                    @endif
+
+                    <dl class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <dt><flux:text size="sm" class="text-zinc-500">{{ __('Fee') }}</flux:text></dt>
+                            <dd><flux:text>₱{{ number_format((float) $documentRequest->fee_amount, 2) }}</flux:text></dd>
+                        </div>
+
+                        @if ($documentRequest->or_number !== null)
+                            <div>
+                                <dt><flux:text size="sm" class="text-zinc-500">{{ __('Official receipt') }}</flux:text></dt>
+                                <dd><flux:text class="font-mono text-xs">{{ $documentRequest->or_number }}</flux:text></dd>
+                            </div>
+                        @endif
+
+                        @if ($documentRequest->paid_at !== null)
+                            <div>
+                                <dt><flux:text size="sm" class="text-zinc-500">{{ __('Recorded') }}</flux:text></dt>
+                                <dd><flux:text>{{ $documentRequest->paid_at->format('F j, Y') }}</flux:text></dd>
+                            </div>
+                        @endif
+                    </dl>
+                </flux:card>
+            @endif
 
             <flux:card class="flex flex-col gap-4">
                 <flux:heading size="sm">{{ __('Supporting requirements') }}</flux:heading>

@@ -18,13 +18,15 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $description
  * @property int $processing_days
+ * @property string $fee
+ * @property bool $requires_payment
  * @property bool $requires_custom_name
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, DocumentRequest> $documentRequests
  */
-#[Fillable(['name', 'slug', 'description', 'processing_days', 'requires_custom_name', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'processing_days', 'fee', 'requires_payment', 'requires_custom_name', 'is_active'])]
 class DocumentType extends Model
 {
     /** @use HasFactory<DocumentTypeFactory> */
@@ -33,10 +35,12 @@ class DocumentType extends Model
     /**
      * The model's default attribute values.
      *
-     * @var array<string, bool|int>
+     * @var array<string, bool|int|string>
      */
     protected $attributes = [
         'processing_days' => 3,
+        'fee' => 0,
+        'requires_payment' => false,
         'requires_custom_name' => false,
         'is_active' => true,
     ];
@@ -50,9 +54,21 @@ class DocumentType extends Model
     {
         return [
             'processing_days' => 'integer',
+            'fee' => 'decimal:2',
+            'requires_payment' => 'boolean',
             'requires_custom_name' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the fee owed for the given number of copies.
+     *
+     * The fee is charged per copy: two transcripts cost twice one.
+     */
+    public function feeFor(int $copies): string
+    {
+        return (string) round((float) $this->fee * $copies, 2);
     }
 
     /**

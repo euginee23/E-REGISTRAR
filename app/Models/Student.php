@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $user_id
- * @property string|null $student_number
+ * @property string $student_number
  * @property string $course
  * @property EnrollmentStatus $enrollment_status
  * @property int|null $year_graduated

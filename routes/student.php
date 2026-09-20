@@ -19,4 +19,7 @@ Route::middleware(['auth', 'verified', 'role:student', 'student.profile'])
 
         Route::livewire('appointments/book/{documentRequest}', 'pages::student.book-appointment')
             ->name('student.appointments.book');
+
+        Route::livewire('appointments/{appointment}/reschedule', 'pages::student.reschedule-appointment')
+            ->name('student.appointments.reschedule');
     });
