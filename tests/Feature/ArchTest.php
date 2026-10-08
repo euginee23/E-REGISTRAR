@@ -1,8 +1,11 @@
 <?php
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Mail\Mailable;
 
-arch()->preset()->laravel();
+// Mailables are exempt from the preset's queue-everything rule: see below.
+arch()->preset()->laravel()->ignoring('App\Mail');
 
 arch()->preset()->security();
 
@@ -18,6 +21,11 @@ arch('models extend the eloquent base model')
 arch('actions are invokable single-purpose classes')
     ->expect('App\Actions')
     ->toBeClasses();
+
+arch('mailables leave the choice of queueing to DeliverMail')
+    ->expect('App\Mail')
+    ->toExtend(Mailable::class)
+    ->not->toImplement(ShouldQueue::class);
 
 arch('debugging helpers never reach the codebase')
     ->expect(['dd', 'dump', 'ray', 'var_dump', 'print_r'])

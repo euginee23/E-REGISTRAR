@@ -6,6 +6,9 @@
                 <flux:navlist.item :href="route('student-profile.edit')" wire:navigate>{{ __('Student profile') }}</flux:navlist.item>
             @endif
             <flux:navlist.item :href="route('security.edit')" wire:navigate>{{ __('Security') }}</flux:navlist.item>
+            @if (auth()->user()->isAdministrator())
+                <flux:navlist.item :href="route('mail-settings.edit')" wire:navigate>{{ __('Mail') }}</flux:navlist.item>
+            @endif
         </flux:navlist>
     </div>
 

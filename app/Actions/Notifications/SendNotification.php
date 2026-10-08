@@ -2,22 +2,23 @@
 
 namespace App\Actions\Notifications;
 
+use App\Actions\Mail\DeliverMail;
 use App\Enums\NotificationType;
 use App\Mail\RegistrarNotificationMail;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
 
 class SendNotification
 {
+    public function __construct(private DeliverMail $deliverMail) {}
+
     /**
      * Notify one or more recipients, in the app and by email.
      *
-     * The stored notification is the record of truth: it is written first and
-     * synchronously, so the bell is correct even when mail is switched off or
-     * the queue is not running. The email mirrors it and is queued, so a slow
-     * mail server never delays the request that triggered it.
+     * The stored notification is the record of truth: it is written first,
+     * so the bell is correct even when mail is switched off or the mail
+     * server is unreachable. The email mirrors it.
      *
      * @param  User|iterable<int, User>  $recipients
      * @return Collection<int, Notification>
@@ -48,7 +49,7 @@ class SendNotification
     }
 
     /**
-     * Queue the email mirroring the in-app notification.
+     * Send the email mirroring the in-app notification.
      *
      * @param  Collection<int, User>  $recipients
      */
@@ -58,12 +59,11 @@ class SendNotification
             return;
         }
 
-        $queue = (string) config('registrar.notifications.queue');
-
         foreach ($recipients as $recipient) {
-            $mailable = new RegistrarNotificationMail($type, $message, $url, $recipient->name);
-
-            Mail::to($recipient->email)->queue($mailable->onQueue($queue));
+            ($this->deliverMail)(
+                $recipient->email,
+                new RegistrarNotificationMail($type, $message, $url, $recipient->name),
+            );
         }
     }
 }

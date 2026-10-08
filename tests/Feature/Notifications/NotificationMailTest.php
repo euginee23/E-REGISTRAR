@@ -15,14 +15,14 @@ beforeEach(function () {
     $this->send = app(SendNotification::class);
 });
 
-test('a notification is stored and its email queued', function () {
+test('a notification is stored and its email sent', function () {
     $user = student();
 
     ($this->send)($user, NotificationType::RequestSubmitted, 'Your request was received.');
 
     expect(Notification::query()->where('user_id', $user->id)->count())->toBe(1);
 
-    Mail::assertQueued(RegistrarNotificationMail::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertSent(RegistrarNotificationMail::class, fn ($mail) => $mail->hasTo($user->email));
 });
 
 test('every recipient gets their own email', function () {
@@ -30,7 +30,7 @@ test('every recipient gets their own email', function () {
 
     ($this->send)($recipients, NotificationType::RequestReceived, 'A new request is waiting.');
 
-    Mail::assertQueued(RegistrarNotificationMail::class, 3);
+    Mail::assertSent(RegistrarNotificationMail::class, 3);
     expect(Notification::query()->count())->toBe(3);
 });
 
@@ -39,7 +39,7 @@ test('the email carries the same message and link as the stored notification', f
 
     ($this->send)($user, NotificationType::RequestStatusChanged, 'Your request is ready.', '/student/requests');
 
-    Mail::assertQueued(RegistrarNotificationMail::class, function ($mail) {
+    Mail::assertSent(RegistrarNotificationMail::class, function ($mail) {
         return $mail->body === 'Your request is ready.'
             && $mail->url === '/student/requests'
             && $mail->type === NotificationType::RequestStatusChanged;
@@ -51,7 +51,7 @@ test('the rendered email shows the message and the subject names the event', fun
 
     ($this->send)($user, NotificationType::AppointmentReminder, 'Your appointment is tomorrow.', '/student/appointments');
 
-    Mail::assertQueued(RegistrarNotificationMail::class, function (RegistrarNotificationMail $mail) {
+    Mail::assertSent(RegistrarNotificationMail::class, function (RegistrarNotificationMail $mail) {
         $mail->assertSeeInHtml('Your appointment is tomorrow.');
         $mail->assertHasSubject(NotificationType::AppointmentReminder->label());
 
@@ -65,8 +65,8 @@ test('recipients who share a message still each receive their own copy', functio
 
     ($this->send)([$first, $second], NotificationType::RequestReceived, 'A new request is waiting.');
 
-    Mail::assertQueued(RegistrarNotificationMail::class, fn ($mail) => $mail->hasTo($first->email));
-    Mail::assertQueued(RegistrarNotificationMail::class, fn ($mail) => $mail->hasTo($second->email));
+    Mail::assertSent(RegistrarNotificationMail::class, fn ($mail) => $mail->hasTo($first->email));
+    Mail::assertSent(RegistrarNotificationMail::class, fn ($mail) => $mail->hasTo($second->email));
 });
 
 test('turning the mail mirror off still records the in-app notification', function () {
@@ -78,7 +78,7 @@ test('turning the mail mirror off still records the in-app notification', functi
 
     expect(Notification::query()->where('user_id', $user->id)->count())->toBe(1);
 
-    Mail::assertNothingQueued();
+    Mail::assertNothingSent();
 });
 
 test('recipients passed as a generator are both stored and mailed', function () {
@@ -93,7 +93,7 @@ test('recipients passed as a generator are both stored and mailed', function () 
     ($this->send)($generator, NotificationType::RequestReceived, 'A new request is waiting.');
 
     expect(Notification::query()->count())->toBe(2);
-    Mail::assertQueued(RegistrarNotificationMail::class, 2);
+    Mail::assertSent(RegistrarNotificationMail::class, 2);
 });
 
 test('a request status change emails the student', function () {
@@ -102,16 +102,17 @@ test('a request status change emails the student', function () {
 
     app(TransitionRequestStatus::class)($documentRequest, RequestStatus::Processing, $staff);
 
-    Mail::assertQueued(
+    Mail::assertSent(
         RegistrarNotificationMail::class,
         fn ($mail) => $mail->hasTo($documentRequest->student->user->email),
     );
 });
 
-test('the queued email is placed on the configured queue', function () {
-    config(['registrar.notifications.queue' => 'mail-low']);
+test('the email is queued instead of sent when queued delivery is enabled', function () {
+    config(['registrar.mail.queued' => true]);
 
     ($this->send)(student(), NotificationType::RequestSubmitted, 'Your request was received.');
 
-    Mail::assertQueued(RegistrarNotificationMail::class, fn ($mail) => $mail->queue === 'mail-low');
+    Mail::assertNothingSent();
+    Mail::assertQueued(RegistrarNotificationMail::class);
 });

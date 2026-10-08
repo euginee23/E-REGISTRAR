@@ -2,16 +2,18 @@
 
 namespace App\Actions\Users;
 
+use App\Actions\Mail\DeliverMail;
 use App\Enums\UserStatus;
 use App\Mail\AccountRejectedMail;
 use App\Models\StudentRegistryEntry;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\UnauthorizedException;
 
 class RejectStudentAccount
 {
+    public function __construct(private DeliverMail $deliverMail) {}
+
     /**
      * Turn away a registered account, keeping the record of why.
      *
@@ -44,7 +46,7 @@ class RejectStudentAccount
 
         $user->unsetRelation('registryEntry');
 
-        Mail::to($user->email)->queue(new AccountRejectedMail($user, $reason));
+        ($this->deliverMail)($user->email, new AccountRejectedMail($user, $reason));
 
         return $user;
     }

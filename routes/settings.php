@@ -10,6 +10,10 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('settings/student-profile', 'pages::settings.student-profile')
         ->middleware(['role:student'])
         ->name('student-profile.edit');
+
+    Route::livewire('settings/mail', 'pages::settings.mail')
+        ->middleware(['role:administrator'])
+        ->name('mail-settings.edit');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

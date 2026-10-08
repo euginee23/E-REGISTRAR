@@ -76,14 +76,30 @@ return [
     | Notifications
     |--------------------------------------------------------------------------
     |
-    | Every in-app notification is mirrored to the recipient by email. The
-    | emails are queued, so a worker must be running for them to leave; turn
-    | the mirror off where no worker is available and the bell still works.
+    | Every in-app notification is mirrored to the recipient by email. Turn
+    | the mirror off and the bell still works; account approval and rejection
+    | emails are sent regardless, since a pending user cannot see the bell.
     |
     */
 
     'notifications' => [
         'mail' => env('REGISTRAR_MAIL_NOTIFICATIONS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mail Delivery
+    |--------------------------------------------------------------------------
+    |
+    | By default every email is sent immediately, during the request that
+    | triggers it. Set REGISTRAR_MAIL_QUEUED=true only where a queue worker
+    | (php artisan queue:work) is kept running - without one, queued emails
+    | wait in the jobs table and are never sent.
+    |
+    */
+
+    'mail' => [
+        'queued' => (bool) env('REGISTRAR_MAIL_QUEUED', false),
         'queue' => env('REGISTRAR_MAIL_QUEUE', 'default'),
     ],
 

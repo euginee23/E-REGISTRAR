@@ -2,14 +2,16 @@
 
 namespace App\Actions\Users;
 
+use App\Actions\Mail\DeliverMail;
 use App\Enums\UserStatus;
 use App\Mail\AccountApprovedMail;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\UnauthorizedException;
 
 class ApproveStudentAccount
 {
+    public function __construct(private DeliverMail $deliverMail) {}
+
     /**
      * Let a registered account into the system.
      *
@@ -35,7 +37,7 @@ class ApproveStudentAccount
             'rejection_reason' => null,
         ])->save();
 
-        Mail::to($user->email)->queue(new AccountApprovedMail($user));
+        ($this->deliverMail)($user->email, new AccountApprovedMail($user));
 
         return $user;
     }

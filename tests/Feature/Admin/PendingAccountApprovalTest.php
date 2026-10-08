@@ -84,7 +84,7 @@ test('approving an account lets the student sign in', function () {
         ->and($user->approved_at)->not->toBeNull()
         ->and($user->email_verified_at)->not->toBeNull();
 
-    Mail::assertQueued(AccountApprovedMail::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertSent(AccountApprovedMail::class, fn ($mail) => $mail->hasTo($user->email));
 });
 
 test('an approved student can actually log in afterwards', function () {
@@ -136,7 +136,7 @@ test('turning an account away records the reason and emails the student', functi
         ->and($user->rejection_reason)->toBe('The student number belongs to a different person.')
         ->and($user->approved_by_user_id)->toBe($staff->id);
 
-    Mail::assertQueued(AccountRejectedMail::class, fn ($mail) => $mail->hasTo($user->email));
+    Mail::assertSent(AccountRejectedMail::class, fn ($mail) => $mail->hasTo($user->email));
 });
 
 test('turning an account away frees its roster entry for a fresh registration', function () {
