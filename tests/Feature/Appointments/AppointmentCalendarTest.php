@@ -26,6 +26,15 @@ test('the calendar opens on the month view', function () {
         ->assertSeeHtml('data-test="month-calendar"');
 });
 
+test('every day in the month grid shows its date', function () {
+    $this->actingAs(registrarStaff());
+
+    Livewire::test('pages::registrar.appointments')
+        ->set('month', '2026-10')
+        ->assertSeeHtmlInOrder(['data-test="day-number"', '27', 'data-test="day-number"', '28'])
+        ->assertSeeHtmlInOrder(['Oct 1', '15', '31']);
+});
+
 test('the month shows every student\'s bookings, not just one', function () {
     $date = CarbonImmutable::today()->addWeekday();
 

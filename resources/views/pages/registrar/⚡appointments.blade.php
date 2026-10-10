@@ -326,51 +326,88 @@ new #[Title('Appointments')] class extends Component {
     </div>
 
     @if ($view === 'month')
-        <flux:card class="flex flex-col gap-3" data-test="month-calendar">
-            <div class="grid grid-cols-7 gap-1 text-center">
-                @foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday)
-                    <flux:text size="sm" class="py-1 font-medium text-zinc-500">{{ __($weekday) }}</flux:text>
-                @endforeach
-            </div>
-
-            <div class="grid grid-cols-7 gap-1">
-                @foreach ($this->monthGrid as $week)
-                    @foreach ($week as $day)
-                        <button
-                            type="button"
-                            wire:key="day-{{ $day['date'] }}"
-                            wire:click="showDay('{{ $day['date'] }}')"
-                            @class([
-                                'flex min-h-20 flex-col gap-1 rounded-lg border p-2 text-start transition',
-                                'border-zinc-200 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800',
-                                'opacity-40' => ! $day['inMonth'],
-                                'ring-2 ring-accent' => $day['isToday'],
-                            ])
-                            data-test="calendar-day"
-                        >
-                            <span class="text-sm font-medium tabular-nums">{{ $day['day'] }}</span>
-
-                            @if ($day['total'] > 0)
-                                <span class="text-xs text-zinc-500" data-test="day-count">
-                                    {{ trans_choice('{1} :count booking|[2,*] :count bookings', $day['total'], ['count' => $day['total']]) }}
-                                </span>
-
-                                <span class="mt-auto flex flex-wrap gap-1">
-                                    @foreach ($day['byStatus'] as $status => $count)
-                                        @php $case = App\Enums\AppointmentStatus::from($status); @endphp
-                                        <span
-                                            class="inline-block size-2 rounded-full {{ $case->dotClass() }}"
-                                            title="{{ $case->label() }}: {{ $count }}"
-                                        ></span>
-                                    @endforeach
-                                </span>
-                            @endif
-                        </button>
+        <flux:card class="flex flex-col overflow-hidden p-0" data-test="month-calendar">
+            <div class="border-b border-zinc-200">
+                <div class="grid grid-cols-7 border-b border-zinc-200 bg-zinc-50">
+                    @foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $weekday)
+                        <div class="px-2 py-2.5 text-center text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                            {{ __($weekday) }}
+                        </div>
                     @endforeach
-                @endforeach
+                </div>
+
+                <div class="grid grid-cols-7 gap-px bg-zinc-200">
+                    @foreach ($this->monthGrid as $week)
+                        @foreach ($week as $day)
+                            @php
+                                $cellDate = CarbonImmutable::parse($day['date']);
+                                $isWeekend = $cellDate->isWeekend();
+                            @endphp
+
+                            <button
+                                type="button"
+                                wire:key="day-{{ $day['date'] }}"
+                                wire:click="showDay('{{ $day['date'] }}')"
+                                @class([
+                                    'group flex min-h-20 flex-col gap-1.5 p-1.5 text-start transition-colors sm:min-h-28 sm:p-2',
+                                    'bg-white hover:bg-brand-50' => $day['inMonth'] && ! $isWeekend,
+                                    'bg-zinc-50/70 hover:bg-brand-50' => $day['inMonth'] && $isWeekend,
+                                    'bg-zinc-50 hover:bg-zinc-100' => ! $day['inMonth'],
+                                ])
+                                aria-label="{{ $cellDate->format('l, F j, Y') }}"
+                                data-test="calendar-day"
+                            >
+                                <span class="flex items-center justify-between gap-1">
+                                    <span
+                                        @class([
+                                            'inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-sm font-semibold',
+                                            'bg-accent text-white' => $day['isToday'],
+                                            'text-zinc-800 group-hover:text-brand-700' => ! $day['isToday'] && $day['inMonth'],
+                                            'text-zinc-400' => ! $day['isToday'] && ! $day['inMonth'],
+                                        ])
+                                        data-test="day-number"
+                                    >
+                                        {{ $day['day'] === 1 ? $cellDate->format('M j') : $day['day'] }}
+                                    </span>
+
+                                    @if ($day['total'] > 0)
+                                        <span
+                                            class="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-600 sm:hidden"
+                                            data-test="day-count"
+                                        >
+                                            {{ $day['total'] }}
+                                        </span>
+                                    @endif
+                                </span>
+
+                                @if ($day['total'] > 0)
+                                    <span class="hidden flex-col gap-1 sm:flex">
+                                        @foreach ($day['byStatus'] as $status => $count)
+                                            @php $case = App\Enums\AppointmentStatus::from($status); @endphp
+                                            <span class="flex items-center gap-1.5 truncate rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-700">
+                                                <span class="inline-block size-2 shrink-0 rounded-full {{ $case->dotClass() }}"></span>
+                                                <span class="truncate">{{ $count }} {{ $case->label() }}</span>
+                                            </span>
+                                        @endforeach
+                                    </span>
+
+                                    <span class="mt-auto flex flex-wrap gap-1 sm:hidden">
+                                        @foreach ($day['byStatus'] as $status => $count)
+                                            @php $case = App\Enums\AppointmentStatus::from($status); @endphp
+                                            <span
+                                                class="inline-block size-2 rounded-full {{ $case->dotClass() }}"
+                                                title="{{ $case->label() }}: {{ $count }}"
+                                            ></span>
+                                        @endforeach
+                                    </span>
+                                @endif
+                            </button>
+                        @endforeach
+                    @endforeach
+                </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+            <div class="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
                 @foreach (App\Enums\AppointmentStatus::cases() as $case)
                     <span class="flex items-center gap-1.5">
                         <span class="inline-block size-2 rounded-full {{ $case->dotClass() }}"></span>
