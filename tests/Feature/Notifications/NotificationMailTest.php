@@ -34,16 +34,22 @@ test('every recipient gets their own email', function () {
     expect(Notification::query()->count())->toBe(3);
 });
 
-test('the email carries the same message and link as the stored notification', function () {
+test('the email carries the same message as the stored notification and links to open it', function () {
     $user = student();
 
-    ($this->send)($user, NotificationType::RequestStatusChanged, 'Your request is ready.', '/student/requests');
+    $notification = ($this->send)($user, NotificationType::RequestStatusChanged, 'Your request is ready.', '/student/requests')->first();
 
-    Mail::assertSent(RegistrarNotificationMail::class, function ($mail) {
+    Mail::assertSent(RegistrarNotificationMail::class, function ($mail) use ($notification) {
         return $mail->body === 'Your request is ready.'
-            && $mail->url === '/student/requests'
+            && $mail->url === route('notifications.open', $notification)
             && $mail->type === NotificationType::RequestStatusChanged;
     });
+});
+
+test('an email for a notification without a destination has no button', function () {
+    ($this->send)(student(), NotificationType::RequestStatusChanged, 'Something happened.');
+
+    Mail::assertSent(RegistrarNotificationMail::class, fn ($mail) => $mail->url === null);
 });
 
 test('the rendered email shows the message and the subject names the event', function () {

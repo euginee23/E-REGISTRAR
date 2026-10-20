@@ -121,23 +121,44 @@ test('the queue can be sorted by document name', function () {
     expect($component->instance()->requests->first()->id)->toBe($alpha->id);
 });
 
-test('the queue can be sorted by submission date newest first', function () {
-    $older = DocumentRequest::factory()->create(['created_at' => now()->subWeek()]);
+test('the queue lists the newest request first by default', function () {
+    DocumentRequest::factory()->create(['created_at' => now()->subWeek()]);
     $newer = DocumentRequest::factory()->create(['created_at' => now()]);
+
+    $this->actingAs(registrarStaff());
+
+    $component = Livewire::test('pages::registrar.requests')
+        ->set('status', RequestStatus::Pending->value)
+        ->assertSee('newest at the top');
+
+    expect($component->get('direction'))->toBe('desc')
+        ->and($component->instance()->requests->first()->id)->toBe($newer->id);
+});
+
+test('the queue can be flipped to the longest waiting first', function () {
+    $older = DocumentRequest::factory()->create(['created_at' => now()->subWeek()]);
+    DocumentRequest::factory()->create(['created_at' => now()]);
 
     $this->actingAs(registrarStaff());
 
     // 'submitted' is already the default sort, so the first click flips it
     // rather than selecting it.
     $component = Livewire::test('pages::registrar.requests')
-        ->set('status', RequestStatus::Pending->value);
+        ->set('status', RequestStatus::Pending->value)
+        ->call('sortBy', 'submitted');
 
-    expect($component->instance()->requests->first()->id)->toBe($older->id);
+    expect($component->get('direction'))->toBe('asc')
+        ->and($component->instance()->requests->first()->id)->toBe($older->id);
+});
 
-    $component->call('sortBy', 'submitted');
+test('returning to the submitted column starts from the newest again', function () {
+    $this->actingAs(registrarStaff());
 
-    expect($component->get('direction'))->toBe('desc')
-        ->and($component->instance()->requests->first()->id)->toBe($newer->id);
+    Livewire::test('pages::registrar.requests')
+        ->call('sortBy', 'student')
+        ->assertSet('direction', 'asc')
+        ->call('sortBy', 'submitted')
+        ->assertSet('direction', 'desc');
 });
 
 test('an explicit sort drops the pending-first rule', function () {
@@ -169,7 +190,7 @@ test('a forged sort or direction falls back to the default', function () {
         ->test('pages::registrar.requests');
 
     expect($component->instance()->sortColumn)->toBe('submitted')
-        ->and($component->instance()->sortDirection)->toBe('asc')
+        ->and($component->instance()->sortDirection)->toBe('desc')
         ->and($component->instance()->requests->total())->toBe(2);
 });
 

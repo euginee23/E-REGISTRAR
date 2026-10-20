@@ -143,7 +143,7 @@ new #[Title('Notifications')] class extends Component {
                             </flux:text>
 
                             @if ($notification->url)
-                                <flux:link :href="$notification->url" class="text-sm" wire:navigate>
+                                <flux:link :href="route('notifications.open', $notification)" class="text-sm" data-test="open-notification-link">
                                     {{ __('View') }}
                                 </flux:link>
                             @endif

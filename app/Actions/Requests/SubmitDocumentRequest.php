@@ -163,7 +163,7 @@ class SubmitDocumentRequest
                 'document' => $documentRequest->display_name,
                 'reference' => $documentRequest->reference_no,
             ]),
-            null,
+            route('registrar.requests.show', $documentRequest),
         );
     }
 

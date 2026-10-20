@@ -45,7 +45,7 @@ new #[Title('Request queue')] class extends Component {
     public string $sort = self::DEFAULT_SORT;
 
     #[Url]
-    public string $direction = 'asc';
+    public string $direction = self::DEFAULT_DIRECTION;
 
     #[Url]
     public int $perPage = self::DEFAULT_PER_PAGE;
@@ -55,6 +55,12 @@ new #[Title('Request queue')] class extends Component {
      * pending-first rule the desk relies on.
      */
     private const DEFAULT_SORT = 'submitted';
+
+    /**
+     * Newest first, so a request that has just come in is at the top of the
+     * queue instead of buried under older ones.
+     */
+    private const DEFAULT_DIRECTION = 'desc';
 
     private const DEFAULT_PER_PAGE = 15;
 
@@ -116,7 +122,7 @@ new #[Title('Request queue')] class extends Component {
             $this->direction = $this->direction === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sort = $column;
-            $this->direction = 'asc';
+            $this->direction = $column === self::DEFAULT_SORT ? self::DEFAULT_DIRECTION : 'asc';
         }
 
         $this->resetPage();
@@ -137,7 +143,7 @@ new #[Title('Request queue')] class extends Component {
     #[Computed]
     public function sortDirection(): string
     {
-        return in_array($this->direction, ['asc', 'desc'], true) ? $this->direction : 'asc';
+        return in_array($this->direction, ['asc', 'desc'], true) ? $this->direction : self::DEFAULT_DIRECTION;
     }
 
     /**
@@ -183,7 +189,7 @@ new #[Title('Request queue')] class extends Component {
     }
 
     /**
-     * Get the filtered request queue, oldest first so nothing is forgotten.
+     * Get the filtered request queue, pending and newest first by default.
      *
      * @return LengthAwarePaginator<int, DocumentRequest>
      */
@@ -305,7 +311,9 @@ new #[Title('Request queue')] class extends Component {
     <x-page-heading
         :heading="__('Request queue')"
         :subheading="$this->sortColumn === 'submitted'
-            ? __('Pending requests are listed first, then the longest waiting.')
+            ? ($this->sortDirection === 'desc'
+                ? __('Pending requests are listed first, newest at the top.')
+                : __('Pending requests are listed first, then the longest waiting.'))
             : __('Sorted by :column.', ['column' => $this->sortColumn])"
     />
 

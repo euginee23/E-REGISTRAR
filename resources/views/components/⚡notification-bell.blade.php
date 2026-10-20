@@ -70,7 +70,7 @@ new class extends Component {
         @else
             @foreach ($this->latest as $notification)
                 <flux:menu.item
-                    :href="$notification->url ?? route('notifications.index')"
+                    :href="route('notifications.open', $notification)"
                     :icon="$notification->type->icon()"
                     wire:key="bell-{{ $notification->id }}"
                 >

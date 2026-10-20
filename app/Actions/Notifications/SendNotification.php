@@ -43,7 +43,7 @@ class SendNotification
             ]),
         );
 
-        $this->mail($recipients, $type, $message, $url);
+        $this->mail($recipients, $notifications, $type, $message);
 
         return $notifications;
     }
@@ -51,18 +51,31 @@ class SendNotification
     /**
      * Send the email mirroring the in-app notification.
      *
+     * The email button opens the recipient's own notification rather than the
+     * destination itself, so following it marks the notification read and a
+     * browser signed in to another account is offered a switch instead of a
+     * bare "forbidden".
+     *
      * @param  Collection<int, User>  $recipients
+     * @param  Collection<int, Notification>  $notifications
      */
-    private function mail(Collection $recipients, NotificationType $type, string $message, ?string $url): void
+    private function mail(Collection $recipients, Collection $notifications, NotificationType $type, string $message): void
     {
         if (! config('registrar.notifications.mail')) {
             return;
         }
 
-        foreach ($recipients as $recipient) {
+        foreach ($recipients as $index => $recipient) {
+            $notification = $notifications[$index];
+
             ($this->deliverMail)(
                 $recipient->email,
-                new RegistrarNotificationMail($type, $message, $url, $recipient->name),
+                new RegistrarNotificationMail(
+                    $type,
+                    $message,
+                    $notification->url === null ? null : route('notifications.open', $notification),
+                    $recipient->name,
+                ),
             );
         }
     }
