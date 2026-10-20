@@ -5,7 +5,19 @@ use App\Models\TimeSlot;
 use Carbon\CarbonImmutable;
 use Livewire\Livewire;
 
-test('slots are only opened on weekdays', function () {
+test('slots are opened monday to saturday by default', function () {
+    $monday = CarbonImmutable::parse('2026-09-07');
+
+    app(GenerateTimeSlots::class)($monday, $monday->addDays(6));
+
+    $days = TimeSlot::query()->get()->map(fn (TimeSlot $slot) => $slot->slot_date->dayOfWeekIso)->unique()->sort()->values();
+
+    expect($days->all())->toBe([1, 2, 3, 4, 5, 6]);
+});
+
+test('slots follow the configured office days', function () {
+    config(['registrar.office.open_days' => [1, 2, 3, 4, 5]]);
+
     $monday = CarbonImmutable::parse('2026-09-07');
 
     app(GenerateTimeSlots::class)($monday, $monday->addDays(6));
@@ -71,13 +83,30 @@ test('regenerating updates the capacity of existing slots', function () {
     expect(TimeSlot::query()->distinct()->pluck('capacity')->all())->toBe([12]);
 });
 
-test('a weekend-only range opens nothing', function () {
+test('saturday is opened but sunday is not', function () {
     $saturday = CarbonImmutable::parse('2026-09-12');
 
     $created = app(GenerateTimeSlots::class)($saturday, $saturday->addDay());
 
+    expect($created)->toBe(9)
+        ->and(TimeSlot::query()->distinct()->pluck('slot_date')->map->toDateString()->all())->toBe(['2026-09-12']);
+});
+
+test('a sunday-only range opens nothing', function () {
+    $sunday = CarbonImmutable::parse('2026-09-13');
+
+    $created = app(GenerateTimeSlots::class)($sunday, $sunday);
+
     expect($created)->toBe(0)
         ->and(TimeSlot::query()->count())->toBe(0);
+});
+
+test('the time slots screen lists the office days', function () {
+    $this->actingAs(registrarStaff());
+
+    Livewire::test('pages::registrar.time-slots')
+        ->set('date', '2026-09-13')
+        ->assertSee('Mon, Tue, Wed, Thu, Fri, Sat');
 });
 
 test('custom office hours are respected', function () {

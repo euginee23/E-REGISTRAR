@@ -149,6 +149,8 @@ test('the turnaround tab renders the figures', function () {
 
     Livewire::test('pages::registrar.reports')
         ->set('tab', 'turnaround')
+        ->set('from', '2026-07-01')
+        ->set('until', '2026-07-31')
         ->assertSee('Days from submission to release')
         ->assertSee('Transcript of Records');
 });

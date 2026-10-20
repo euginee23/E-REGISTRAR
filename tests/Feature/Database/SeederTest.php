@@ -41,14 +41,14 @@ test('seeded document types carry a processing window', function () {
     expect(DocumentType::query()->where('processing_days', '<', 1)->count())->toBe(0);
 });
 
-test('the time slot seeder never opens the office on a weekend', function () {
+test('the time slot seeder never opens the office on a closed day', function () {
     $this->seed(TimeSlotSeeder::class);
 
-    $weekendSlots = TimeSlot::query()->get()->filter(
-        fn (TimeSlot $slot) => $slot->slot_date->isWeekend(),
+    $closedDaySlots = TimeSlot::query()->get()->filter(
+        fn (TimeSlot $slot) => $slot->slot_date->isSunday(),
     );
 
-    expect($weekendSlots)->toBeEmpty()
+    expect($closedDaySlots)->toBeEmpty()
         ->and(TimeSlot::query()->count())->toBeGreaterThan(0);
 });
 

@@ -121,6 +121,24 @@ new #[Title('Reports')] class extends Component {
                     $row['completed'], $row['noShows'], $row['cancelled'], $row['utilisation'],
                 ], $this->appointments['rows']),
             ),
+            'summary' => $exportReportToCsv(
+                'registrar-summary_'.CarbonImmutable::today()->toDateString().'.csv',
+                ['Section', 'Item', 'Value'],
+                [
+                    ['Overview', 'Total requests', $this->summary['total']],
+                    ['Overview', 'Still open', $this->summary['open']],
+                    ['Overview', 'Overdue (open more than 7 days)', $this->summary['overdue']],
+                    ['Overview', 'This month', $this->summary['thisMonth']],
+                    ['Overview', 'Last month', $this->summary['lastMonth']],
+                    ['Overview', 'Change vs last month %', $this->summary['monthDelta']],
+                    ...array_map(fn (RequestStatus $status): array => [
+                        'Requests by status', $status->label(), $this->summary['byStatus'][$status->value],
+                    ], RequestStatus::cases()),
+                    ...array_map(fn (array $document): array => [
+                        'Most requested documents', $document['name'], $document['total'],
+                    ], $this->summary['topDocuments']),
+                ],
+            ),
             default => $exportReportToCsv(
                 "request-volume_{$suffix}.csv",
                 ['Document type', ...array_map(fn (RequestStatus $s): string => $s->label(), RequestStatus::cases()), 'Total'],

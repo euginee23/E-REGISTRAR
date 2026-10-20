@@ -10,7 +10,9 @@ return [
     | The window during which appointment time slots may be generated, and the
     | days of the week the office is open (1 = Monday ... 7 = Sunday, matching
     | Carbon's ISO day numbering). Slot generation never produces a slot that
-    | falls outside these hours or on a closed day.
+    | falls outside these hours or on a closed day. The office is open Monday
+    | to Saturday by default; set REGISTRAR_OPEN_DAYS (e.g. "1,2,3,4,5") to
+    | change that.
     |
     */
 
@@ -20,7 +22,7 @@ return [
         'contact' => env('REGISTRAR_OFFICE_CONTACT', 'registrar@example.edu'),
         'opens_at' => env('REGISTRAR_OPENS_AT', '08:00'),
         'closes_at' => env('REGISTRAR_CLOSES_AT', '17:00'),
-        'open_days' => [1, 2, 3, 4, 5],
+        'open_days' => array_map('intval', explode(',', (string) env('REGISTRAR_OPEN_DAYS', '1,2,3,4,5,6'))),
         'slot_minutes' => 60,
         'default_capacity' => 5,
     ],

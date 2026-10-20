@@ -140,10 +140,10 @@ test('only the requesting student is reminded', function () {
         ->toBe($appointment->documentRequest->student->user_id);
 });
 
-test('the command is scheduled on weekday afternoons', function () {
+test('the command is scheduled every afternoon', function () {
     $events = collect(app(Schedule::class)->events())
         ->filter(fn ($event) => str_contains($event->command ?? '', 'appointments:send-reminders'));
 
     expect($events)->toHaveCount(1)
-        ->and($events->first()->expression)->toBe('0 16 * * 1-5');
+        ->and($events->first()->expression)->toBe('0 16 * * *');
 });

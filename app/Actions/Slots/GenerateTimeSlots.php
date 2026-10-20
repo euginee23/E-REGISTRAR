@@ -11,7 +11,7 @@ class GenerateTimeSlots
      * Generate appointment time slots across a range of dates.
      *
      * Slots are only ever created on the days the registrar's office is open,
-     * which is what keeps a student from booking a weekend: the date picker
+     * which is what keeps a student from booking a closed day: the date picker
      * simply returns nothing for a closed day. Existing slots are updated in
      * place rather than duplicated, so re-running this is safe.
      *

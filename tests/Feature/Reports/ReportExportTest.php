@@ -94,6 +94,29 @@ test('the appointment report exports its own columns', function () {
         ->and($body)->toContain('2026-10-05');
 });
 
+test('the summary tab exports the summary, not the request volume', function () {
+    $this->travelTo('2026-10-20 10:00:00');
+
+    $type = DocumentType::factory()->create(['name' => 'Certificate of Enrollment']);
+    DocumentRequest::factory()->count(3)->for($type)->pending()->create();
+
+    $this->actingAs(registrarStaff());
+
+    $streamed = Livewire::test('pages::registrar.reports')
+        ->set('tab', 'summary')
+        ->instance()
+        ->export(app(ExportReportToCsv::class));
+
+    $body = csvBody($streamed);
+
+    expect($streamed->headers->get('content-disposition'))->toContain('registrar-summary_2026-10-20.csv')
+        ->and($body)->toContain('Section,Item,Value')
+        ->and($body)->toContain('Overview,"Total requests",3')
+        ->and($body)->toContain('"Requests by status",Pending,3')
+        ->and($body)->toContain('"Most requested documents","Certificate of Enrollment",3')
+        ->and($body)->not->toContain('Document type');
+});
+
 test('the download is named after the report and period', function () {
     $this->actingAs(registrarStaff());
 

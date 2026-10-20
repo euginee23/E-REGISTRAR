@@ -50,6 +50,22 @@ new #[Title('Time slots')] class extends Component {
     }
 
     /**
+     * Get the days the office is open, e.g. "Mon, Tue, Wed, Thu, Fri, Sat".
+     */
+    #[Computed]
+    public function openDaysLabel(): string
+    {
+        /** @var array<int, int> $openDays */
+        $openDays = config('registrar.office.open_days');
+
+        // 2024-01-01 was a Monday, so ISO day N falls on January N.
+        return collect($openDays)
+            ->sort()
+            ->map(fn (int $day): string => CarbonImmutable::create(2024, 1, $day)->translatedFormat('D'))
+            ->implode(', ');
+    }
+
+    /**
      * Open or close a single slot.
      */
     public function toggleSlot(int $slotId): void
@@ -114,7 +130,7 @@ new #[Title('Time slots')] class extends Component {
 
         Flux::modal('generate-slots')->close();
         Flux::toast(variant: 'success', text: trans_choice(
-            '{0} No weekdays fell in that range.|{1} :count slot opened.|[2,*] :count slots opened.',
+            '{0} No office days fell in that range.|{1} :count slot opened.|[2,*] :count slots opened.',
             $created,
             ['count' => $created],
         ));
@@ -139,7 +155,7 @@ new #[Title('Time slots')] class extends Component {
         <x-empty-state
             icon="clock"
             :heading="__('No slots on this date')"
-            :description="__('Weekends are never given slots. Use \'Open slots\' to add them for a range of weekdays.')"
+            :description="__('Slots are only given on office days (:days). Use \'Open slots\' to add them for a range of dates.', ['days' => $this->openDaysLabel])"
         />
     @else
         <flux:table>
@@ -203,7 +219,8 @@ new #[Title('Time slots')] class extends Component {
             <div class="flex flex-col gap-2">
                 <flux:heading size="lg">{{ __('Open appointment slots') }}</flux:heading>
                 <flux:text>
-                    {{ __('Slots are created for weekdays only, from :opens to :closes. Existing slots keep their bookings.', [
+                    {{ __('Slots are created on office days only (:days), from :opens to :closes. Existing slots keep their bookings.', [
+                        'days' => $this->openDaysLabel,
                         'opens' => config('registrar.office.opens_at'),
                         'closes' => config('registrar.office.closes_at'),
                     ]) }}

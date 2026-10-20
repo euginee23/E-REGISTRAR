@@ -341,7 +341,7 @@ new #[Title('Appointments')] class extends Component {
                         @foreach ($week as $day)
                             @php
                                 $cellDate = CarbonImmutable::parse($day['date']);
-                                $isWeekend = $cellDate->isWeekend();
+                                $isClosedDay = ! in_array($cellDate->dayOfWeekIso, config('registrar.office.open_days'), true);
                             @endphp
 
                             <button
@@ -350,8 +350,8 @@ new #[Title('Appointments')] class extends Component {
                                 wire:click="showDay('{{ $day['date'] }}')"
                                 @class([
                                     'group flex min-h-20 flex-col gap-1.5 p-1.5 text-start transition-colors sm:min-h-28 sm:p-2',
-                                    'bg-white hover:bg-brand-50' => $day['inMonth'] && ! $isWeekend,
-                                    'bg-zinc-50/70 hover:bg-brand-50' => $day['inMonth'] && $isWeekend,
+                                    'bg-white hover:bg-brand-50' => $day['inMonth'] && ! $isClosedDay,
+                                    'bg-zinc-50/70 hover:bg-brand-50' => $day['inMonth'] && $isClosedDay,
                                     'bg-zinc-50 hover:bg-zinc-100' => ! $day['inMonth'],
                                 ])
                                 aria-label="{{ $cellDate->format('l, F j, Y') }}"

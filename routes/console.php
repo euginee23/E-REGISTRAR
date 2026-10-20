@@ -10,7 +10,8 @@ Artisan::command('inspire', function () {
 
 // Late afternoon Manila time, the day before the appointment. This only lands
 // at the right local hour because the application timezone is Asia/Manila.
+// It runs every day so Monday appointments are reminded on Sunday and
+// Saturday appointments on Friday.
 Schedule::command('appointments:send-reminders')
-    ->weekdays()
     ->dailyAt('16:00')
     ->withoutOverlapping();
