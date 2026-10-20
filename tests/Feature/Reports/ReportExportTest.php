@@ -99,6 +99,7 @@ test('the summary tab exports the summary, not the request volume', function () 
 
     $type = DocumentType::factory()->create(['name' => 'Certificate of Enrollment']);
     DocumentRequest::factory()->count(3)->for($type)->pending()->create();
+    $claimed = DocumentRequest::factory()->released()->create(['created_at' => '2026-09-01 09:00:00']);
 
     $this->actingAs(registrarStaff());
 
@@ -114,6 +115,9 @@ test('the summary tab exports the summary, not the request volume', function () 
     expect($streamed->headers->get('content-disposition'))->toContain('registrar-summary_2026-10-01_to_2026-10-20.csv')
         ->and($body)->toContain('Section,Item,Value')
         ->and($body)->toContain('Period,Submitted,"Oct 1, 2026 – Oct 20, 2026"')
+        ->and($body)->toContain('"Claimed documents"')
+        ->and($body)->toContain('"Released at",Student,"Student number"')
+        ->and($body)->toContain($claimed->reference_no)
         ->and($body)->toContain('Overview,"Total requests",3')
         ->and($body)->toContain('"Requests by status",Pending,3')
         ->and($body)->toContain('"Most requested documents","Certificate of Enrollment",3')

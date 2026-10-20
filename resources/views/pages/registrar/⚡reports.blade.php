@@ -5,6 +5,7 @@ use App\Actions\Reports\BuildRegistrarSummary;
 use App\Actions\Reports\BuildRequestVolumeReport;
 use App\Actions\Reports\BuildTurnaroundReport;
 use App\Actions\Reports\ExportReportToCsv;
+use App\Actions\Reports\ListClaimedDocuments;
 use App\Enums\RequestStatus;
 use Carbon\CarbonImmutable;
 use Livewire\Attributes\Computed;
@@ -95,6 +96,17 @@ new #[Title('Reports')] class extends Component {
     public function summary(): array
     {
         return app(BuildRegistrarSummary::class)($this->fromDate(), $this->untilDate());
+    }
+
+    /**
+     * Get who claimed which document within the window.
+     *
+     * @return list<array<string, mixed>>
+     */
+    #[Computed]
+    public function claimed(): array
+    {
+        return app(ListClaimedDocuments::class)($this->fromDate(), $this->untilDate());
     }
 
     /**
@@ -194,6 +206,15 @@ new #[Title('Reports')] class extends Component {
                     ...array_map(fn (array $document): array => [
                         'Most requested documents', $document['name'], $document['total'],
                     ], $this->summary['topDocuments']),
+                    // The claim log has more columns than the summary, so it
+                    // follows as its own table with its own heading row.
+                    [],
+                    ['Claimed documents'],
+                    ['Released at', 'Student', 'Student number', 'Course', 'Document', 'Reference', 'Copies', 'Released by'],
+                    ...array_map(fn (array $claim): array => [
+                        $claim['released_at'], $claim['student'], $claim['student_number'], $claim['course'],
+                        $claim['document'], $claim['reference'], $claim['copies'], $claim['released_by'],
+                    ], $this->claimed),
                 ],
             ),
             default => $exportReportToCsv(
@@ -481,5 +502,64 @@ new #[Title('Reports')] class extends Component {
                 @endif
             </flux:card>
         </div>
+
+        <flux:card class="flex flex-col gap-4" data-test="claimed-report">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-col gap-1">
+                    <flux:heading size="sm">{{ __('Claimed documents') }}</flux:heading>
+                    <flux:text size="sm" class="text-zinc-500">
+                        {{ __('Who claimed which document, by the day it was released.') }}
+                    </flux:text>
+                </div>
+
+                <flux:badge color="green" size="sm">
+                    {{ trans_choice('{0} None claimed|{1} :count claimed|[2,*] :count claimed', count($this->claimed), ['count' => count($this->claimed)]) }}
+                </flux:badge>
+            </div>
+
+            @if ($this->claimed === [])
+                <x-empty-state icon="hand-raised" :heading="__('Nothing was claimed in this period')" />
+            @else
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>{{ __('Released') }}</flux:table.column>
+                        <flux:table.column>{{ __('Student') }}</flux:table.column>
+                        <flux:table.column>{{ __('Course') }}</flux:table.column>
+                        <flux:table.column>{{ __('Document') }}</flux:table.column>
+                        <flux:table.column>{{ __('Reference') }}</flux:table.column>
+                        <flux:table.column>{{ __('Released by') }}</flux:table.column>
+                    </flux:table.columns>
+
+                    <flux:table.rows>
+                        @foreach ($this->claimed as $claim)
+                            <flux:table.row wire:key="claimed-{{ $claim['id'] }}">
+                                <flux:table.cell class="whitespace-nowrap tabular-nums">
+                                    {{ Carbon\CarbonImmutable::parse($claim['released_at'])->format('M j, Y g:i A') }}
+                                </flux:table.cell>
+                                <flux:table.cell>
+                                    <div class="flex flex-col">
+                                        <span>{{ $claim['student'] }}</span>
+                                        <flux:text size="sm" class="text-zinc-400">{{ $claim['student_number'] }}</flux:text>
+                                    </div>
+                                </flux:table.cell>
+                                <flux:table.cell>{{ $claim['course'] }}</flux:table.cell>
+                                <flux:table.cell>
+                                    {{ $claim['document'] }}
+                                    @if ($claim['copies'] > 1)
+                                        <flux:text size="sm" class="inline text-zinc-400">&times; {{ $claim['copies'] }}</flux:text>
+                                    @endif
+                                </flux:table.cell>
+                                <flux:table.cell>
+                                    <flux:link :href="route('registrar.requests.show', $claim['reference'])" wire:navigate class="font-mono text-sm">
+                                        {{ $claim['reference'] }}
+                                    </flux:link>
+                                </flux:table.cell>
+                                <flux:table.cell>{{ $claim['released_by'] ?? '—' }}</flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+            @endif
+        </flux:card>
     @endif
 </div>

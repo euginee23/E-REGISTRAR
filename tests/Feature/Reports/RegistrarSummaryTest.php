@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Reports\BuildRegistrarSummary;
+use App\Actions\Reports\ListClaimedDocuments;
 use App\Enums\RequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
@@ -105,4 +106,58 @@ test('an unknown preset leaves the window alone', function () {
         ->set('from', '2026-10-01')
         ->call('usePreset', 'forever')
         ->assertSet('from', '2026-10-01');
+});
+
+test('the claim log lists who claimed what on the chosen day', function () {
+    $staff = registrarStaff();
+    $type = DocumentType::factory()->create(['name' => 'Form 137']);
+
+    $claimed = DocumentRequest::factory()->for($type)->released()->create([
+        'created_at' => '2026-10-01 09:00:00',
+        'released_at' => '2026-10-19 14:30:00',
+        'processed_by_user_id' => $staff->id,
+    ]);
+    DocumentRequest::factory()->released()->create(['released_at' => '2026-10-20 09:00:00']);
+    DocumentRequest::factory()->readyForRelease()->create(['created_at' => '2026-10-19 09:00:00']);
+
+    $yesterday = CarbonImmutable::parse('2026-10-19');
+    $claims = app(ListClaimedDocuments::class)($yesterday, $yesterday);
+
+    expect($claims)->toHaveCount(1)
+        ->and($claims[0])->toMatchArray([
+            'released_at' => '2026-10-19 14:30',
+            'student' => $claimed->student->user->name,
+            'student_number' => $claimed->student->student_number,
+            'document' => 'Form 137',
+            'reference' => $claimed->reference_no,
+            'released_by' => $staff->name,
+        ]);
+});
+
+test('a claim is dated by its release, not its submission', function () {
+    DocumentRequest::factory()->released()->create([
+        'created_at' => '2026-10-19 09:00:00',
+        'released_at' => '2026-10-20 09:00:00',
+    ]);
+
+    $yesterday = CarbonImmutable::parse('2026-10-19');
+
+    expect(app(ListClaimedDocuments::class)($yesterday, $yesterday))->toBe([]);
+});
+
+test('the summary tab shows the names of students who claimed', function () {
+    $claimed = DocumentRequest::factory()->released()->create(['released_at' => '2026-10-19 14:30:00']);
+
+    $this->actingAs(registrarStaff());
+
+    Livewire::test('pages::registrar.reports')
+        ->set('tab', 'summary')
+        ->call('usePreset', 'yesterday')
+        ->assertSee('Claimed documents')
+        ->assertSee($claimed->student->user->name)
+        ->assertSee($claimed->reference_no)
+        ->assertSee('Oct 19, 2026 2:30 PM')
+        ->call('usePreset', 'today')
+        ->assertDontSee($claimed->student->user->name)
+        ->assertSee('Nothing was claimed in this period');
 });
