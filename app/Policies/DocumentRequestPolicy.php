@@ -62,10 +62,11 @@ class DocumentRequestPolicy
             return $this->cancel($user, $documentRequest);
         }
 
-        // A chargeable document is not started until the money is in. Only
-        // the move into processing is blocked: rejecting or cancelling an
-        // unpaid request must stay possible, or it could never be closed.
-        if ($to === RequestStatus::Processing && $documentRequest->awaitsPayment()) {
+        // A chargeable document is not started, or not handed over when the
+        // fee is collected on claiming, until the money is in. Rejecting or
+        // cancelling an unpaid request must stay possible, or it could never
+        // be closed.
+        if ($documentRequest->isBlockedByPayment($to)) {
             return false;
         }
 

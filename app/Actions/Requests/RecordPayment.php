@@ -62,16 +62,20 @@ class RecordPayment
      */
     private function notify(DocumentRequest $documentRequest, bool $waived): void
     {
+        // A fee collected on claiming is recorded at the counter, so there
+        // is no processing still to come that the student needs telling of.
+        $nextStep = $documentRequest->isPaidOnRelease() ? '' : ' '.__('Your request will now be processed.');
+
         $message = $waived
-            ? __('The fee for :document (:reference) has been waived. Your request will now be processed.', [
+            ? __('The fee for :document (:reference) has been waived.', [
                 'document' => $documentRequest->display_name,
                 'reference' => $documentRequest->reference_no,
-            ])
-            : __('Your payment of :amount for :document (:reference) has been recorded. Your request will now be processed.', [
+            ]).$nextStep
+            : __('Your payment of :amount for :document (:reference) has been recorded.', [
                 'amount' => '₱'.number_format((float) $documentRequest->amount_paid, 2),
                 'document' => $documentRequest->display_name,
                 'reference' => $documentRequest->reference_no,
-            ]);
+            ]).$nextStep;
 
         ($this->sendNotification)(
             $documentRequest->student->user,

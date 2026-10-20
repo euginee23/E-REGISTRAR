@@ -150,7 +150,9 @@ new #[Layout('layouts::print')] #[Title('Transaction slip')] class extends Compo
 
                 @if ($documentRequest->awaitsPayment())
                     <p class="mt-3 text-sm font-medium" data-test="slip-payment-due">
-                        {{ __('Present this slip at the cashier to settle the fee. Processing begins once payment is recorded.') }}
+                        {{ $documentRequest->isPaidOnRelease()
+                            ? __('Present this slip at the cashier to settle the fee on the day you claim. The document is released once payment is recorded.')
+                            : __('Present this slip at the cashier to settle the fee. Processing begins once payment is recorded.') }}
                     </p>
                 @endif
             @endif

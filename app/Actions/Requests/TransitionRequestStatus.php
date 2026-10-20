@@ -32,7 +32,7 @@ class TransitionRequestStatus
         // Checked before authorizing so the operator is told the fee is
         // outstanding, rather than being handed a bare "not allowed" by the
         // policy rule that enforces the same thing.
-        if ($to === RequestStatus::Processing && $documentRequest->awaitsPayment()) {
+        if ($documentRequest->isBlockedByPayment($to)) {
             throw PaymentRequiredException::make($documentRequest);
         }
 
@@ -113,10 +113,16 @@ class TransitionRequestStatus
                 'reference' => $reference,
                 'document' => $document,
             ]),
-            RequestStatus::ReadyForRelease => __('Your :document (:reference) is ready for release. Book an appointment to claim it.', [
-                'reference' => $reference,
-                'document' => $document,
-            ]),
+            RequestStatus::ReadyForRelease => $documentRequest->awaitsPayment()
+                ? __('Your :document (:reference) is ready for release. Book an appointment to claim it, and bring :amount for the fee.', [
+                    'reference' => $reference,
+                    'document' => $document,
+                    'amount' => '₱'.number_format((float) $documentRequest->fee_amount, 2),
+                ])
+                : __('Your :document (:reference) is ready for release. Book an appointment to claim it.', [
+                    'reference' => $reference,
+                    'document' => $document,
+                ]),
             RequestStatus::Released => __('Your :document (:reference) has been released. Thank you.', [
                 'reference' => $reference,
                 'document' => $document,

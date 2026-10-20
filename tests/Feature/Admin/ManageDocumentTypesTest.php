@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentTiming;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use Livewire\Livewire;
@@ -180,6 +181,61 @@ test('an administrator can mark a document as chargeable', function () {
 
     expect($type->requires_payment)->toBeTrue()
         ->and((float) $type->fee)->toBe(250.0);
+});
+
+test('a chargeable document is paid before processing unless told otherwise', function () {
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.document-types')
+        ->call('createType')
+        ->set('name', 'Diploma')
+        ->set('processingDays', 5)
+        ->set('requiresPayment', true)
+        ->set('fee', 250)
+        ->call('saveType')
+        ->assertHasNoErrors();
+
+    expect(DocumentType::query()->where('name', 'Diploma')->firstOrFail()->payment_timing)
+        ->toBe(PaymentTiming::BeforeProcessing);
+});
+
+test('an administrator can let a document be paid for on release', function () {
+    $type = DocumentType::factory()->chargeable(50)->create(['name' => 'Certificate of Enrollment']);
+
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.document-types')
+        ->call('editType', $type->id)
+        ->assertSet('paymentTiming', PaymentTiming::BeforeProcessing->value)
+        ->assertSeeHtml('data-test="type-payment-timing-group"')
+        ->set('paymentTiming', PaymentTiming::OnRelease->value)
+        ->call('saveType')
+        ->assertHasNoErrors();
+
+    expect($type->fresh()->payment_timing)->toBe(PaymentTiming::OnRelease);
+});
+
+test('the payment timing must be a known option', function () {
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.document-types')
+        ->call('createType')
+        ->set('name', 'Diploma')
+        ->set('requiresPayment', true)
+        ->set('fee', 250)
+        ->set('paymentTiming', 'next_year')
+        ->call('saveType')
+        ->assertHasErrors('paymentTiming');
+});
+
+test('the table shows when a fee is paid', function () {
+    DocumentType::factory()->chargeable(50)->payableOnRelease()->create();
+
+    $this->actingAs(administrator());
+
+    $this->get(route('admin.document-types.index'))
+        ->assertOk()
+        ->assertSee('Paid on release');
 });
 
 test('a chargeable document cannot be left at a zero fee', function () {

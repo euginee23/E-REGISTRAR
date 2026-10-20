@@ -92,7 +92,8 @@ class SubmitDocumentRequest
                     : PaymentStatus::NotRequired,
                 // Snapshotted rather than read back from the document type,
                 // so repricing later never changes what this student was
-                // asked to pay.
+                // asked to pay, or when.
+                'payment_timing' => $documentType->payment_timing,
                 'fee_amount' => $documentType->feeFor($copies),
             ]);
 

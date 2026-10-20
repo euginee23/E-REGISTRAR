@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentTiming;
 use App\Enums\RequestStatus;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
@@ -56,6 +57,16 @@ class DocumentRequestFactory extends Factory
             'document_type_id' => DocumentType::factory()->chargeable($fee),
             'payment_status' => PaymentStatus::Unpaid,
             'fee_amount' => $fee,
+        ]);
+    }
+
+    /**
+     * Indicate that the fee is collected when the document is claimed.
+     */
+    public function payableOnRelease(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'payment_timing' => PaymentTiming::OnRelease,
         ]);
     }
 

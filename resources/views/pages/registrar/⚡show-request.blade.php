@@ -143,7 +143,16 @@ new class extends Component {
 
                     <flux:separator />
 
-                    @if ($documentRequest->awaitsPayment())
+                    @if ($documentRequest->awaitsPayment() && $documentRequest->isPaidOnRelease())
+                        <flux:callout variant="secondary" icon="banknotes" data-test="payment-on-release-callout">
+                            <flux:callout.heading>{{ __('Collect the fee on claiming') }}</flux:callout.heading>
+                            <flux:callout.text>
+                                {{ __('The :amount fee is paid when the document is claimed. Record the payment before marking it released.', [
+                                    'amount' => '₱' . number_format((float) $documentRequest->fee_amount, 2),
+                                ]) }}
+                            </flux:callout.text>
+                        </flux:callout>
+                    @elseif ($documentRequest->awaitsPayment())
                         <flux:callout variant="warning" icon="exclamation-triangle" data-test="payment-blocking-callout">
                             <flux:callout.heading>{{ __('Payment must be recorded first') }}</flux:callout.heading>
                             <flux:callout.text>

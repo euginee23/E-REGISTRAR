@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentTiming;
 use App\Enums\RequestStatus;
 use App\Observers\DocumentRequestObserver;
 use Carbon\CarbonImmutable;
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $copies
  * @property RequestStatus $status
  * @property PaymentStatus $payment_status
+ * @property PaymentTiming $payment_timing
  * @property string $fee_amount
  * @property string|null $amount_paid
  * @property string|null $or_number
@@ -58,6 +60,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'copies',
     'status',
     'payment_status',
+    'payment_timing',
     'fee_amount',
     'amount_paid',
     'or_number',
@@ -83,6 +86,7 @@ class DocumentRequest extends Model
         'copies' => 1,
         'status' => RequestStatus::Pending->value,
         'payment_status' => PaymentStatus::NotRequired->value,
+        'payment_timing' => PaymentTiming::BeforeProcessing->value,
         'fee_amount' => 0,
     ];
 
@@ -97,6 +101,7 @@ class DocumentRequest extends Model
             'copies' => 'integer',
             'status' => RequestStatus::class,
             'payment_status' => PaymentStatus::class,
+            'payment_timing' => PaymentTiming::class,
             'fee_amount' => 'decimal:2',
             'amount_paid' => 'decimal:2',
             'paid_at' => 'immutable_datetime',
@@ -151,6 +156,26 @@ class DocumentRequest extends Model
     public function awaitsPayment(): bool
     {
         return $this->payment_status->isOutstanding();
+    }
+
+    /**
+     * Determine whether the outstanding fee keeps the request out of the given status.
+     *
+     * Only one move is ever blocked - into processing, or into released for a
+     * fee collected on claiming - so rejecting or cancelling an unpaid
+     * request always stays possible.
+     */
+    public function isBlockedByPayment(RequestStatus $to): bool
+    {
+        return $this->awaitsPayment() && $to === $this->payment_timing->gatedStatus();
+    }
+
+    /**
+     * Determine whether the fee is collected on the day the document is claimed.
+     */
+    public function isPaidOnRelease(): bool
+    {
+        return $this->payment_timing === PaymentTiming::OnRelease;
     }
 
     /**

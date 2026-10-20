@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentTiming;
 use App\Models\DocumentType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -42,6 +43,16 @@ class DocumentTypeFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'fee' => $fee,
             'requires_payment' => true,
+        ]);
+    }
+
+    /**
+     * Indicate that the fee is collected when the document is claimed.
+     */
+    public function payableOnRelease(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'payment_timing' => PaymentTiming::OnRelease,
         ]);
     }
 

@@ -158,9 +158,15 @@ new class extends Component {
                                 ]) }}
                             </flux:callout.heading>
                             <flux:callout.text>
-                                {{ __('Processing starts once the registrar has recorded your payment. Bring your reference number, :reference.', [
-                                    'reference' => $documentRequest->reference_no,
-                                ]) }}
+                                @if ($documentRequest->isPaidOnRelease())
+                                    {{ __('Pay on the day you claim your document; it is handed over once the registrar has recorded your payment. Bring your reference number, :reference.', [
+                                        'reference' => $documentRequest->reference_no,
+                                    ]) }}
+                                @else
+                                    {{ __('Processing starts once the registrar has recorded your payment. Bring your reference number, :reference.', [
+                                        'reference' => $documentRequest->reference_no,
+                                    ]) }}
+                                @endif
                             </flux:callout.text>
                         </flux:callout>
                     @endif

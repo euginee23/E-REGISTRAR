@@ -15,7 +15,11 @@ class PaymentRequiredException extends RuntimeException
      */
     public static function make(DocumentRequest $documentRequest): self
     {
-        return new self(__('Record the :amount payment for :reference before processing it.', [
+        $message = $documentRequest->isPaidOnRelease()
+            ? 'Record the :amount payment for :reference before releasing it.'
+            : 'Record the :amount payment for :reference before processing it.';
+
+        return new self(__($message, [
             'amount' => '₱'.number_format((float) $documentRequest->fee_amount, 2),
             'reference' => $documentRequest->reference_no,
         ]));

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentTiming;
 use Database\Factories\DocumentTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -20,13 +21,14 @@ use Illuminate\Support\Carbon;
  * @property int $processing_days
  * @property string $fee
  * @property bool $requires_payment
+ * @property PaymentTiming $payment_timing
  * @property bool $requires_custom_name
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, DocumentRequest> $documentRequests
  */
-#[Fillable(['name', 'slug', 'description', 'processing_days', 'fee', 'requires_payment', 'requires_custom_name', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'processing_days', 'fee', 'requires_payment', 'payment_timing', 'requires_custom_name', 'is_active'])]
 class DocumentType extends Model
 {
     /** @use HasFactory<DocumentTypeFactory> */
@@ -41,6 +43,7 @@ class DocumentType extends Model
         'processing_days' => 3,
         'fee' => 0,
         'requires_payment' => false,
+        'payment_timing' => 'before_processing',
         'requires_custom_name' => false,
         'is_active' => true,
     ];
@@ -56,6 +59,7 @@ class DocumentType extends Model
             'processing_days' => 'integer',
             'fee' => 'decimal:2',
             'requires_payment' => 'boolean',
+            'payment_timing' => PaymentTiming::class,
             'requires_custom_name' => 'boolean',
             'is_active' => 'boolean',
         ];
