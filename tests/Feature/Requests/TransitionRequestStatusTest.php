@@ -3,7 +3,9 @@
 use App\Actions\Requests\TransitionRequestStatus;
 use App\Enums\NotificationType;
 use App\Enums\RequestStatus;
+use App\Mail\RegistrarNotificationMail;
 use App\Models\DocumentRequest;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\UnauthorizedException;
 
 /**
@@ -143,6 +145,40 @@ test('a rejection is notified as a rejection', function () {
 
     expect($user->registrarNotifications()->first()->type)
         ->toBe(NotificationType::RequestRejected);
+});
+
+test('the remarks written with a status change reach the student', function () {
+    $request = DocumentRequest::factory()->pending()->create();
+    $user = $request->student->user;
+
+    transition($request, RequestStatus::Rejected, registrarStaff(), 'Incomplete requirements.');
+
+    expect($user->registrarNotifications()->first()->message)
+        ->toContain('was not approved.')
+        ->toContain('Remarks: Incomplete requirements.');
+});
+
+test('the remarks are mirrored into the email', function () {
+    Mail::fake();
+
+    $request = DocumentRequest::factory()->pending()->create();
+
+    transition($request, RequestStatus::Processing, registrarStaff(), 'Please bring your old ID.');
+
+    Mail::assertSent(RegistrarNotificationMail::class, function (RegistrarNotificationMail $mail) {
+        $mail->assertSeeInHtml('Remarks: Please bring your old ID.');
+
+        return true;
+    });
+});
+
+test('a status change without remarks adds no remarks line', function () {
+    $request = DocumentRequest::factory()->pending()->create();
+
+    transition($request, RequestStatus::Processing, registrarStaff(), '  ');
+
+    expect($request->student->user->registrarNotifications()->first()->message)
+        ->not->toContain('Remarks:');
 });
 
 test('a failed transition writes no history', function () {

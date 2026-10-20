@@ -94,7 +94,64 @@ new #[Title('Reports')] class extends Component {
     #[Computed]
     public function summary(): array
     {
-        return app(BuildRegistrarSummary::class)();
+        return app(BuildRegistrarSummary::class)($this->fromDate(), $this->untilDate());
+    }
+
+    /**
+     * Set the reporting window to one of the common ranges.
+     */
+    public function usePreset(string $preset): void
+    {
+        $today = CarbonImmutable::today();
+
+        [$from, $until] = match ($preset) {
+            'today' => [$today, $today],
+            'yesterday' => [$today->subDay(), $today->subDay()],
+            'last7' => [$today->subDays(6), $today],
+            'this-month' => [$today->startOfMonth(), $today],
+            'last-month' => [$today->subMonthNoOverflow()->startOfMonth(), $today->subMonthNoOverflow()->endOfMonth()],
+            default => [null, null],
+        };
+
+        if ($from === null) {
+            return;
+        }
+
+        $this->from = $from->toDateString();
+        $this->until = $until->toDateString();
+    }
+
+    /**
+     * Get the quick ranges offered above the reports.
+     *
+     * @return array<string, string>
+     */
+    public function presets(): array
+    {
+        return [
+            'today' => __('Today'),
+            'yesterday' => __('Yesterday'),
+            'last7' => __('Last 7 days'),
+            'this-month' => __('This month'),
+            'last-month' => __('Last month'),
+        ];
+    }
+
+    /**
+     * Describe a date range for display, collapsing a single day.
+     */
+    public function describeRange(?string $from, ?string $until): string
+    {
+        if ($from === null || $until === null || $from === '' || $until === '') {
+            return __('All time');
+        }
+
+        $start = CarbonImmutable::parse($from);
+        $end = CarbonImmutable::parse($until);
+
+        return $start->isSameDay($end)
+            ? $start->format('M j, Y')
+            : $start->format('M j, Y').' – '.$end->format('M j, Y');
     }
 
     /**
@@ -122,15 +179,15 @@ new #[Title('Reports')] class extends Component {
                 ], $this->appointments['rows']),
             ),
             'summary' => $exportReportToCsv(
-                'registrar-summary_'.CarbonImmutable::today()->toDateString().'.csv',
+                "registrar-summary_{$suffix}.csv",
                 ['Section', 'Item', 'Value'],
                 [
+                    ['Period', 'Submitted', $this->describeRange($this->from, $this->until)],
                     ['Overview', 'Total requests', $this->summary['total']],
                     ['Overview', 'Still open', $this->summary['open']],
                     ['Overview', 'Overdue (open more than 7 days)', $this->summary['overdue']],
-                    ['Overview', 'This month', $this->summary['thisMonth']],
-                    ['Overview', 'Last month', $this->summary['lastMonth']],
-                    ['Overview', 'Change vs last month %', $this->summary['monthDelta']],
+                    ['Previous period', $this->describeRange($this->summary['previousFrom'], $this->summary['previousUntil']), $this->summary['previousTotal']],
+                    ['Previous period', 'Change %', $this->summary['delta']],
                     ...array_map(fn (RequestStatus $status): array => [
                         'Requests by status', $status->label(), $this->summary['byStatus'][$status->value],
                     ], RequestStatus::cases()),
@@ -169,6 +226,20 @@ new #[Title('Reports')] class extends Component {
     <div class="flex flex-wrap items-end gap-3 print:hidden">
         <flux:input wire:model.live="from" :label="__('From')" type="date" class="max-w-40" data-test="from-filter" />
         <flux:input wire:model.live="until" :label="__('Until')" type="date" class="max-w-40" data-test="until-filter" />
+
+        <div class="flex flex-wrap gap-1">
+            @foreach ($this->presets() as $preset => $label)
+                <flux:button
+                    wire:click="usePreset('{{ $preset }}')"
+                    size="sm"
+                    variant="subtle"
+                    wire:key="preset-{{ $preset }}"
+                    data-test="preset-{{ $preset }}"
+                >
+                    {{ $label }}
+                </flux:button>
+            @endforeach
+        </div>
     </div>
 
     <flux:navbar class="print:hidden">
@@ -343,8 +414,19 @@ new #[Title('Reports')] class extends Component {
             @endif
         </flux:card>
     @else
+        <flux:text class="-mb-2" data-test="summary-period">
+            {{ __('Requests submitted: :period', ['period' => $this->describeRange($from, $until)]) }}
+        </flux:text>
+
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-test="summary-report">
-            <x-stat-card :label="__('Total requests')" :value="$this->summary['total']" icon="document-text" />
+            <x-stat-card
+                :label="__('Total requests')"
+                :value="$this->summary['total']"
+                icon="document-text"
+                :hint="$this->summary['delta'] === null
+                    ? null
+                    : __(':delta% vs previous period', ['delta' => ($this->summary['delta'] > 0 ? '+' : '') . $this->summary['delta']])"
+            />
             <x-stat-card :label="__('Still open')" :value="$this->summary['open']" icon="clock" />
             <x-stat-card
                 :label="__('Overdue')"
@@ -353,12 +435,12 @@ new #[Title('Reports')] class extends Component {
                 :hint="__('Open for more than 7 days')"
             />
             <x-stat-card
-                :label="__('This month')"
-                :value="$this->summary['thisMonth']"
+                :label="__('Previous period')"
+                :value="$this->summary['previousTotal'] ?? '—'"
                 icon="chart-bar"
-                :hint="$this->summary['monthDelta'] === null
-                    ? __('No comparison available')
-                    : __(':delta% vs last month', ['delta' => $this->summary['monthDelta']])"
+                :hint="$this->summary['previousFrom'] === null
+                    ? __('Pick a From and Until date to compare')
+                    : $this->describeRange($this->summary['previousFrom'], $this->summary['previousUntil'])"
             />
         </div>
 
@@ -382,7 +464,7 @@ new #[Title('Reports')] class extends Component {
                 <flux:heading size="sm">{{ __('Most requested documents') }}</flux:heading>
 
                 @if ($this->summary['topDocuments'] === [])
-                    <x-empty-state icon="document-duplicate" :heading="__('No requests yet')" />
+                    <x-empty-state icon="document-duplicate" :heading="__('No requests in this period')" />
                 @else
                     <div class="flex flex-col gap-3">
                         @php $topMax = max(1, collect($this->summary['topDocuments'])->max('total')); @endphp

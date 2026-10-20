@@ -71,7 +71,7 @@ class TransitionRequestStatus
             ]);
         });
 
-        $this->notifyStudent($documentRequest, $to, $actor);
+        $this->notifyStudent($documentRequest, $to, $actor, $remarks);
 
         return $documentRequest;
     }
@@ -80,9 +80,10 @@ class TransitionRequestStatus
      * Tell the requesting student their request has moved on.
      *
      * A student cancelling their own request is not told about it - they just
-     * did it themselves.
+     * did it themselves. Remarks written with the change travel with it, so
+     * the student reads them in the bell and the email without signing in.
      */
-    private function notifyStudent(DocumentRequest $documentRequest, RequestStatus $to, User $actor): void
+    private function notifyStudent(DocumentRequest $documentRequest, RequestStatus $to, User $actor, ?string $remarks): void
     {
         $student = $documentRequest->student->user;
 
@@ -95,9 +96,21 @@ class TransitionRequestStatus
             $to === RequestStatus::Rejected
                 ? NotificationType::RequestRejected
                 : NotificationType::RequestStatusChanged,
-            $this->messageFor($documentRequest, $to),
+            $this->withRemarks($this->messageFor($documentRequest, $to), $remarks),
             route('student.requests.show', $documentRequest),
         );
+    }
+
+    /**
+     * Append the registrar's remarks to a notification message.
+     */
+    private function withRemarks(string $message, ?string $remarks): string
+    {
+        $remarks = trim((string) $remarks);
+
+        return $remarks === ''
+            ? $message
+            : $message.' '.__('Remarks: :remarks', ['remarks' => $remarks]);
     }
 
     /**
@@ -127,7 +140,7 @@ class TransitionRequestStatus
                 'reference' => $reference,
                 'document' => $document,
             ]),
-            RequestStatus::Rejected => __('Your request :reference for :document was not approved. Please check the remarks.', [
+            RequestStatus::Rejected => __('Your request :reference for :document was not approved.', [
                 'reference' => $reference,
                 'document' => $document,
             ]),

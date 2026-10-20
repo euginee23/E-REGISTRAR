@@ -104,13 +104,16 @@ test('the summary tab exports the summary, not the request volume', function () 
 
     $streamed = Livewire::test('pages::registrar.reports')
         ->set('tab', 'summary')
+        ->set('from', '2026-10-01')
+        ->set('until', '2026-10-20')
         ->instance()
         ->export(app(ExportReportToCsv::class));
 
     $body = csvBody($streamed);
 
-    expect($streamed->headers->get('content-disposition'))->toContain('registrar-summary_2026-10-20.csv')
+    expect($streamed->headers->get('content-disposition'))->toContain('registrar-summary_2026-10-01_to_2026-10-20.csv')
         ->and($body)->toContain('Section,Item,Value')
+        ->and($body)->toContain('Period,Submitted,"Oct 1, 2026 – Oct 20, 2026"')
         ->and($body)->toContain('Overview,"Total requests",3')
         ->and($body)->toContain('"Requests by status",Pending,3')
         ->and($body)->toContain('"Most requested documents","Certificate of Enrollment",3')
