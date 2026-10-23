@@ -25,6 +25,24 @@ test('a middle name the roster omits does not block the match', function () {
     expect(($this->match)('2022-10231', 'Juan Pablo Dela Cruz'))->not->toBeNull();
 });
 
+test('a middle initial on the roster may be left out or spelled in full', function (string $submitted) {
+    registryEntry(['student_number' => '2023-002', 'name' => 'MIKEE B. CAÑETE']);
+
+    expect(($this->match)('2023-002', $submitted))->not->toBeNull();
+})->with([
+    'initial omitted' => 'Mikee Cañete',
+    'initial given' => 'Mikee B. Cañete',
+    'middle name in full' => 'Mikee Bautista Cañete',
+    'accent dropped' => 'Mikee Canete',
+]);
+
+test('leaving out a middle initial does not excuse a wrong surname', function () {
+    registryEntry(['student_number' => '2023-002', 'name' => 'MIKEE B. CAÑETE']);
+
+    expect(fn () => ($this->match)('2023-002', 'Mikee B. Santos'))
+        ->toThrow(StudentRegistryMismatchException::class);
+});
+
 test('casing and punctuation are ignored when matching a name', function (string $submitted) {
     registryEntry(['student_number' => '2022-10231', 'name' => "Ma. Teresa O'Brien-Santos"]);
 

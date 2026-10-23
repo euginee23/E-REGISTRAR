@@ -103,3 +103,61 @@ function registryEntry(array $attributes = []): StudentRegistryEntry
 {
     return StudentRegistryEntry::factory()->create($attributes);
 }
+
+/**
+ * Build a minimal .xlsx workbook and return its contents.
+ *
+ * Text cells go through the shared string table and whole numbers are
+ * written as numeric cells, the way Excel itself saves them. A null cell is
+ * left out of the row entirely, as Excel does for empty cells.
+ *
+ * @param  array<int, array<int, string|int|null>>  $rows
+ */
+function xlsxWorkbook(array $rows): string
+{
+    $strings = [];
+    $sheetRows = '';
+
+    foreach (array_values($rows) as $rowIndex => $cells) {
+        $rowNumber = $rowIndex + 1;
+        $sheetRows .= '<row r="'.$rowNumber.'">';
+
+        foreach (array_values($cells) as $columnIndex => $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            $reference = chr(65 + $columnIndex).$rowNumber;
+
+            if (is_int($value)) {
+                $sheetRows .= '<c r="'.$reference.'"><v>'.$value.'</v></c>';
+
+                continue;
+            }
+
+            $strings[] = htmlspecialchars($value, ENT_XML1);
+            $sheetRows .= '<c r="'.$reference.'" t="s"><v>'.(count($strings) - 1).'</v></c>';
+        }
+
+        $sheetRows .= '</row>';
+    }
+
+    $main = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    $relationships = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+    $path = tempnam(sys_get_temp_dir(), 'workbook');
+    $zip = new ZipArchive;
+    $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>');
+    $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+    $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="'.$main.'" xmlns:r="'.$relationships.'"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>');
+    $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>');
+    $zip->addFromString('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="'.$main.'"><sheetData>'.$sheetRows.'</sheetData></worksheet>');
+    $zip->addFromString('xl/sharedStrings.xml', '<?xml version="1.0" encoding="UTF-8"?><sst xmlns="'.$main.'" count="'.count($strings).'" uniqueCount="'.count($strings).'">'.implode('', array_map(fn (string $text): string => '<si><t>'.$text.'</t></si>', $strings)).'</sst>');
+    $zip->close();
+
+    $contents = (string) file_get_contents($path);
+    unlink($path);
+
+    return $contents;
+}

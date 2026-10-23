@@ -58,6 +58,10 @@ class MatchStudentRegistryEntry
      * may carry extra words the roster omits - a middle name or a suffix - but
      * every word the roster holds must be present, so "Juan Dela Cruz" never
      * passes for a roster entry reading "Maria Dela Cruz".
+     *
+     * A single-letter middle initial on the roster ("Mikee B. Cañete") is
+     * the exception: students rarely type it, so it may be left out, as long
+     * as the full words of the roster name are all there.
      */
     private function namesMatch(string $registryName, string $submittedName): bool
     {
@@ -68,7 +72,13 @@ class MatchStudentRegistryEntry
             return false;
         }
 
-        return array_diff($registryTokens, $submittedTokens) === [];
+        $requiredTokens = array_filter($registryTokens, fn (string $token): bool => strlen($token) > 1);
+
+        if ($requiredTokens === []) {
+            $requiredTokens = $registryTokens;
+        }
+
+        return array_diff($requiredTokens, $submittedTokens) === [];
     }
 
     /**

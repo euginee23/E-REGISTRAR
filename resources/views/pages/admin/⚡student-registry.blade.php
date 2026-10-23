@@ -1,6 +1,6 @@
 <?php
 
-use App\Actions\Registry\ImportStudentRegistryCsv;
+use App\Actions\Registry\ImportStudentRegistry;
 use App\Models\StudentRegistryEntry;
 use Flux\Flux;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -34,7 +34,7 @@ new #[Title('Student registry')] class extends Component {
 
     public ?int $year_graduated = null;
 
-    public ?TemporaryUploadedFile $csv = null;
+    public ?TemporaryUploadedFile $roster = null;
 
     /**
      * The outcome of the most recent import, kept to show the summary.
@@ -191,23 +191,23 @@ new #[Title('Student registry')] class extends Component {
     /**
      * Load a roster export into the registry.
      */
-    public function importCsv(ImportStudentRegistryCsv $importStudentRegistryCsv): void
+    public function importRoster(ImportStudentRegistry $importStudentRegistry): void
     {
         Gate::authorize('create', StudentRegistryEntry::class);
 
         $this->validate([
-            'csv' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+            'roster' => ['required', 'file', 'extensions:xlsx,csv,txt', 'mimes:xlsx,zip,csv,txt', 'max:2048'],
         ]);
 
         try {
-            $this->importResult = $importStudentRegistryCsv($this->csv->getRealPath());
+            $this->importResult = $importStudentRegistry($this->roster->getRealPath());
         } catch (\Throwable $exception) {
-            $this->addError('csv', $exception->getMessage());
+            $this->addError('roster', $exception->getMessage());
 
             return;
         }
 
-        $this->reset('csv');
+        $this->reset('roster');
         unset($this->entries);
 
         Flux::modal('registry-import')->close();
@@ -221,7 +221,7 @@ new #[Title('Student registry')] class extends Component {
     {
         Gate::authorize('create', StudentRegistryEntry::class);
 
-        $this->reset('csv', 'importResult');
+        $this->reset('roster', 'importResult');
         $this->resetValidation();
 
         Flux::modal('registry-import')->show();
@@ -234,7 +234,7 @@ new #[Title('Student registry')] class extends Component {
         :subheading="__('The roster registration is checked against, so a student number can only be claimed by the student it belongs to.')"
     >
         <flux:button wire:click="startImport" size="sm" variant="subtle" icon="arrow-up-tray" data-test="start-import">
-            {{ __('Import CSV') }}
+            {{ __('Import Excel / CSV') }}
         </flux:button>
 
         <flux:button wire:click="createEntry" variant="primary" size="sm" icon="plus" data-test="create-entry">
@@ -408,21 +408,24 @@ new #[Title('Student registry')] class extends Component {
     </flux:modal>
 
     <flux:modal name="registry-import" class="min-w-[26rem]">
-        <form wire:submit="importCsv" class="flex flex-col gap-6">
+        <form wire:submit="importRoster" class="flex flex-col gap-6">
             <div class="flex flex-col gap-2">
                 <flux:heading size="lg">{{ __('Import registry') }}</flux:heading>
                 <flux:text>
-                    {{ __('A CSV with a header row of: student_number, name, course, year_graduated. Entries that already have an account are left untouched.') }}
+                    {{ __('An Excel (.xlsx) or CSV file whose first row has the column headings ID No., Name and Course. A Year Graduated column is optional, and other columns are ignored. Only the first sheet of a workbook is read.') }}
+                </flux:text>
+                <flux:text>
+                    {{ __('Entries that already have an account are left untouched.') }}
                 </flux:text>
             </div>
 
             <flux:input
-                wire:model="csv"
+                wire:model="roster"
                 type="file"
-                accept=".csv,text/csv"
+                accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                 :label="__('Roster file')"
                 required
-                data-test="registry-csv-input"
+                data-test="registry-file-input"
             />
 
             <div class="flex justify-end gap-2">

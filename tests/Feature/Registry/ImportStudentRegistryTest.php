@@ -1,6 +1,6 @@
 <?php
 
-use App\Actions\Registry\ImportStudentRegistryCsv;
+use App\Actions\Registry\ImportStudentRegistry;
 use App\Models\StudentRegistryEntry;
 
 /**
@@ -15,7 +15,7 @@ function registryCsv(string $contents): string
 }
 
 beforeEach(function () {
-    $this->import = app(ImportStudentRegistryCsv::class);
+    $this->import = app(ImportStudentRegistry::class);
 });
 
 test('a roster export is loaded into the registry', function () {
@@ -135,4 +135,76 @@ test('a file larger than the configured cap is refused', function () {
         ->toThrow(RuntimeException::class);
 
     expect(StudentRegistryEntry::query()->count())->toBe(0);
+});
+
+/**
+ * Write an Excel workbook to a temporary file and return its path.
+ *
+ * @param  array<int, array<int, string|int|null>>  $rows
+ */
+function registryWorkbook(array $rows): string
+{
+    $path = tempnam(sys_get_temp_dir(), 'registry').'.xlsx';
+    file_put_contents($path, xlsxWorkbook($rows));
+
+    return $path;
+}
+
+test('the registrar\'s Excel masterlist is loaded into the registry', function () {
+    $result = ($this->import)(registryWorkbook([
+        ['ID NO.', 'NAME', 'COURSE', 'DONE PRINT'],
+        ['2023-001', 'JUNEL JAY CABERTE', 'ACT', 'done'],
+        ['2023-002', 'MIKEE B. CAÑETE', 'ACT', 'done'],
+        ['2023-045', 'JOHN  CLIFFORD A. SABELLANO', 'BSIT', 'done'],
+    ]));
+
+    expect($result['imported'])->toBe(3)
+        ->and($result['skipped'])->toBe(0)
+        ->and($result['errors'])->toBe([]);
+
+    expect(StudentRegistryEntry::query()->where('student_number', '2023-002')->firstOrFail())
+        ->name->toBe('MIKEE B. CAÑETE')
+        ->course->toBe('ACT');
+
+    expect(StudentRegistryEntry::query()->where('student_number', '2023-045')->value('name'))
+        ->toBe('JOHN CLIFFORD A. SABELLANO');
+});
+
+test('numeric cells in a workbook import as the text the sheet shows', function () {
+    ($this->import)(registryWorkbook([
+        ['Student ID', 'Full Name', 'Program', 'Year Graduated'],
+        [2023001, 'Ana Lim', 'BSIT', 2022],
+    ]));
+
+    expect(StudentRegistryEntry::query()->where('student_number', '2023001')->firstOrFail())
+        ->year_graduated->toBe(2022);
+});
+
+test('empty cells and blank rows in a workbook are handled', function () {
+    $result = ($this->import)(registryWorkbook([
+        ['ID NO.', 'NAME', 'COURSE'],
+        ['2023-001', 'Junel Jay Caberte', 'ACT'],
+        [null, null, null],
+        ['2023-002', null, 'ACT'],
+    ]));
+
+    expect($result['imported'])->toBe(1)
+        ->and($result['skipped'])->toBe(1)
+        ->and($result['errors'][0])->toStartWith('Row 4:');
+});
+
+test('a workbook missing a required column is rejected outright', function () {
+    expect(fn () => ($this->import)(registryWorkbook([
+        ['ID NO.', 'NAME'],
+        ['2023-001', 'Junel Jay Caberte'],
+    ])))->toThrow(RuntimeException::class, 'course');
+
+    expect(StudentRegistryEntry::query()->count())->toBe(0);
+});
+
+test('an old .xls file is refused with a hint to re-save it', function () {
+    $path = tempnam(sys_get_temp_dir(), 'registry').'.xls';
+    file_put_contents($path, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1".str_repeat("\0", 64));
+
+    expect(fn () => ($this->import)($path))->toThrow(RuntimeException::class, '.xlsx');
 });

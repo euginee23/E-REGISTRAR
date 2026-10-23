@@ -144,11 +144,41 @@ test('an administrator can import a roster export', function () {
     CSV);
 
     Livewire::test('pages::admin.student-registry')
-        ->set('csv', $csv)
-        ->call('importCsv')
+        ->set('roster', $csv)
+        ->call('importRoster')
         ->assertHasNoErrors();
 
     expect(StudentRegistryEntry::query()->count())->toBe(2);
+});
+
+test('an administrator can import an Excel masterlist', function () {
+    $this->actingAs(administrator());
+
+    $workbook = UploadedFile::fake()->createWithContent('masterlist.xlsx', xlsxWorkbook([
+        ['ID NO.', 'NAME', 'COURSE', 'DONE PRINT'],
+        ['2023-001', 'JUNEL JAY CABERTE', 'ACT', 'done'],
+        ['2023-012', 'KAREN KATE M. SALVACION', 'BSIT', 'done'],
+    ]));
+
+    Livewire::test('pages::admin.student-registry')
+        ->set('roster', $workbook)
+        ->call('importRoster')
+        ->assertHasNoErrors()
+        ->assertSee('2 added, 0 updated, 0 skipped.');
+
+    expect(StudentRegistryEntry::query()->pluck('student_number')->all())
+        ->toEqualCanonicalizing(['2023-001', '2023-012']);
+});
+
+test('a file that is not a spreadsheet is refused', function () {
+    $this->actingAs(administrator());
+
+    Livewire::test('pages::admin.student-registry')
+        ->set('roster', UploadedFile::fake()->image('roster.png'))
+        ->call('importRoster')
+        ->assertHasErrors('roster');
+
+    expect(StudentRegistryEntry::query()->count())->toBe(0);
 });
 
 test('an unreadable import reports the problem instead of failing', function () {
@@ -157,9 +187,9 @@ test('an unreadable import reports the problem instead of failing', function () 
     $csv = UploadedFile::fake()->createWithContent('roster.csv', "student_number,course\n2022-10231,BS IT");
 
     Livewire::test('pages::admin.student-registry')
-        ->set('csv', $csv)
-        ->call('importCsv')
-        ->assertHasErrors('csv');
+        ->set('roster', $csv)
+        ->call('importRoster')
+        ->assertHasErrors('roster');
 
     expect(StudentRegistryEntry::query()->count())->toBe(0);
 });
