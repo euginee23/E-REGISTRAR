@@ -128,7 +128,7 @@ new class extends Component {
             </flux:button>
         </flux:modal.trigger>
 
-        <flux:modal :name="$this->modalName" class="min-w-[30rem]">
+        <flux:modal :name="$this->modalName" class="w-full md:w-[36rem]">
             <form wire:submit="reschedule" class="flex flex-col gap-6">
                 <div class="flex flex-col gap-2">
                     <flux:heading size="lg">{{ __('Move this appointment') }}</flux:heading>

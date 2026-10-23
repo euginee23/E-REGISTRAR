@@ -13,37 +13,42 @@
         data-test="no-slots"
     />
 @else
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-test="slot-grid">
-        @foreach ($slots as $slot)
-            @php
-                $isCurrent = $currentSlotId !== null && (int) $currentSlotId === $slot->id;
-            @endphp
+    {{-- Columns follow the grid's own width, so the slots fit inside narrow places like modals. --}}
+    <div class="@container">
+        <div class="grid gap-3 @sm:grid-cols-2 @2xl:grid-cols-3" data-test="slot-grid">
+            @foreach ($slots as $slot)
+                @php
+                    $isCurrent = $currentSlotId !== null && (int) $currentSlotId === $slot->id;
+                @endphp
 
-            <flux:button
-                type="button"
-                wire:key="slot-{{ $slot->id }}"
-                wire:click="{{ $select }}({{ $slot->id }})"
-                :variant="$selectedSlotId === $slot->id ? 'primary' : 'outline'"
-                :disabled="$isCurrent || $slot->isFull() || ! $slot->startsAt()->isFuture()"
-                class="flex-col items-start gap-1 py-3"
-                data-test="slot-option"
-            >
-                <span class="font-medium">{{ $slot->label }}</span>
-                <span class="text-xs opacity-75">
-                    @if ($isCurrent)
-                        {{ __('Current time') }}
-                    @elseif ($slot->isFull())
-                        {{ __('Fully booked') }}
-                    @elseif (! $slot->startsAt()->isFuture())
-                        {{ __('Passed') }}
-                    @else
-                        {{ __(':count of :capacity left', [
-                            'count' => $slot->remaining_capacity,
-                            'capacity' => $slot->capacity,
-                        ]) }}
-                    @endif
-                </span>
-            </flux:button>
-        @endforeach
+                <flux:button
+                    type="button"
+                    wire:key="slot-{{ $slot->id }}"
+                    wire:click="{{ $select }}({{ $slot->id }})"
+                    :variant="$selectedSlotId === $slot->id ? 'primary' : 'outline'"
+                    :disabled="$isCurrent || $slot->isFull() || ! $slot->startsAt()->isFuture()"
+                    class="h-auto! min-w-0 justify-start! py-3 text-start whitespace-normal!"
+                    data-test="slot-option"
+                >
+                    <span class="flex flex-col items-start gap-1">
+                        <span class="font-medium">{{ $slot->label }}</span>
+                        <span class="text-xs opacity-75">
+                            @if ($isCurrent)
+                                {{ __('Current time') }}
+                            @elseif ($slot->isFull())
+                                {{ __('Fully booked') }}
+                            @elseif (! $slot->startsAt()->isFuture())
+                                {{ __('Passed') }}
+                            @else
+                                {{ __(':count of :capacity left', [
+                                    'count' => $slot->remaining_capacity,
+                                    'capacity' => $slot->capacity,
+                                ]) }}
+                            @endif
+                        </span>
+                    </span>
+                </flux:button>
+            @endforeach
+        </div>
     </div>
 @endif

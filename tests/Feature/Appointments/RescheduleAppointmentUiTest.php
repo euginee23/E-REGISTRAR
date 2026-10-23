@@ -155,6 +155,20 @@ test('staff can move an appointment from the calendar', function () {
         ->and($originalSlot->refresh()->booked_count)->toBe(0);
 });
 
+test('the staff reschedule slots wrap to fit inside the modal', function () {
+    $appointment = appointmentFor(student());
+
+    $this->actingAs(registrarStaff());
+
+    Livewire::test('registrar.reschedule-appointment', ['appointment' => $appointment])
+        ->set('date', $appointment->timeSlot->slot_date->toDateString())
+        ->assertSeeHtml('@container')
+        ->assertSeeHtml('@sm:grid-cols-2 @2xl:grid-cols-3')
+        ->assertSeeHtml('h-auto!')
+        ->assertSeeHtml('whitespace-normal!')
+        ->assertDontSeeHtml('min-w-[30rem]');
+});
+
 test('a staff reschedule tells the student exactly once', function () {
     $appointment = appointmentFor(student());
     $target = alternativeSlot($appointment->timeSlot);
